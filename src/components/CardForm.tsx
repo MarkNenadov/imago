@@ -132,7 +132,16 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="relative space-y-8">
+      {/* AI Identification Overlay */}
+      {identifying && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
+          <div className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
+          <p className="text-sm font-medium text-gray-700">Identifying card...</p>
+          <p className="mt-1 text-xs text-gray-400">Analyzing image with CardSight AI</p>
+        </div>
+      )}
+
       {/* Image Upload */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">Card Images</h2>
@@ -151,9 +160,6 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
             currentImage={formData.imageBack || undefined}
           />
         </div>
-        {identifying && (
-          <p className="text-sm text-blue-600">Identifying card...</p>
-        )}
       </section>
 
       {/* Card Details */}
