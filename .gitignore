@@ -1,0 +1,30 @@
+# Worktrees
+.worktrees/
+
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite
+
+# Uploads
+public/uploads/
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.db-shm
+*.db-wal
