@@ -12,9 +12,9 @@ A sports card collection management app for tracking baseball and hockey cards. 
 - **Tools**
   - **CSV Export** — Download your full collection as a spreadsheet
   - **Lot Builder** — Select cards, generate composite grid images and marketplace listing descriptions
-  - **Tag Cleanup** — Backfill missing decade tags (1960s–1990s) automatically
+  - **Tag Cleanup** — Backfill missing decade tags (1960s–1990s) and HOF tags automatically
   - **Data Audit** — Find cards missing important fields (price, condition, team, image, etc.)
-- **Auto-tagging** — Cards from 1960–1999 automatically get their decade tag on creation
+- **Auto-tagging** — Cards from 1960–1999 automatically get their decade tag, and Baseball Hall of Famers get the HOF tag on creation
 
 ## Tech Stack
 
