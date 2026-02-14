@@ -235,7 +235,6 @@ function LotBuilder({ cards }: { cards: Card[] }) {
 interface TagFix {
   cardId: string;
   playerName: string;
-  year: number;
   addedTag: string;
 }
 
@@ -267,7 +266,7 @@ function TagCleanup() {
     <div className="rounded-lg bg-white p-6 shadow-sm">
       <h2 className="mb-1 text-lg font-semibold text-gray-900">Tag Cleanup</h2>
       <p className="mb-4 text-sm text-gray-500">
-        Find cards missing decade tags (1960s-1990s) and add them automatically.
+        Find cards missing decade tags (1960s-1990s) or HOF tags and add them automatically.
       </p>
 
       {!scanned && (
@@ -283,13 +282,13 @@ function TagCleanup() {
       {scanned && !applied && (
         <>
           {fixes.length === 0 ? (
-            <p className="text-sm text-green-600">All cards have correct decade tags.</p>
+            <p className="text-sm text-green-600">All cards have correct tags.</p>
           ) : (
             <>
               <div className="mb-4 max-h-48 space-y-1 overflow-y-auto">
                 {fixes.map((fix) => (
-                  <div key={fix.cardId} className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-700">{fix.playerName} ({fix.year})</span>
+                  <div key={`${fix.cardId}-${fix.addedTag}`} className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-700">{fix.playerName}</span>
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
                       + {fix.addedTag}
                     </span>

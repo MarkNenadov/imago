@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { createCard, listCards, searchCards } from "@/db/cards";
+import { isHallOfFamer } from "@/lib/hall-of-fame";
 
 export async function GET(request: NextRequest) {
   const db = getDb();
@@ -45,6 +46,10 @@ export async function POST(request: NextRequest) {
     if (decade >= 1960 && decade <= 1990 && !tags.includes(decadeTag)) {
       tags.push(decadeTag);
     }
+  }
+
+  if (isHallOfFamer(body.playerName) && !tags.includes("HOF")) {
+    tags.push("HOF");
   }
 
   const card = createCard(db, { ...body, tags });

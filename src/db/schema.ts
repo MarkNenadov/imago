@@ -31,4 +31,12 @@ export const cards = sqliteTable("cards", {
 export type Card = typeof cards.$inferSelect;
 export type NewCard = typeof cards.$inferInsert;
 
+export const imageHashes = sqliteTable("image_hashes", {
+  hash: text("hash").primaryKey(),
+  imagePath: text("image_path").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
 export { referenceCards } from "./reference-schema";

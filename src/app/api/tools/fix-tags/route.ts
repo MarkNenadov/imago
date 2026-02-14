@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { listCards, updateCard } from "@/db/cards";
+import { isHallOfFamer } from "@/lib/hall-of-fame";
 
 interface TagFix {
   cardId: string;
   playerName: string;
-  year: number;
   addedTag: string;
 }
 
@@ -17,24 +17,33 @@ function getDecadeTag(year: number): string | null {
   return null;
 }
 
+function findMissingTags(playerName: string, year: number | null, tags: string[]): string[] {
+  const missing: string[] = [];
+
+  if (year) {
+    const decadeTag = getDecadeTag(year);
+    if (decadeTag && !tags.includes(decadeTag)) {
+      missing.push(decadeTag);
+    }
+  }
+
+  if (isHallOfFamer(playerName) && !tags.includes("HOF")) {
+    missing.push("HOF");
+  }
+
+  return missing;
+}
+
 export async function GET() {
   const db = getDb();
   const allCards = listCards(db);
 
   const fixes: TagFix[] = [];
   for (const card of allCards) {
-    if (!card.year) continue;
-    const decadeTag = getDecadeTag(card.year);
-    if (!decadeTag) continue;
-
     const tags = (card.tags as string[]) ?? [];
-    if (!tags.includes(decadeTag)) {
-      fixes.push({
-        cardId: card.id,
-        playerName: card.playerName,
-        year: card.year,
-        addedTag: decadeTag,
-      });
+    const missing = findMissingTags(card.playerName, card.year, tags);
+    for (const tag of missing) {
+      fixes.push({ cardId: card.id, playerName: card.playerName, addedTag: tag });
     }
   }
 
@@ -47,20 +56,14 @@ export async function POST() {
 
   const fixes: TagFix[] = [];
   for (const card of allCards) {
-    if (!card.year) continue;
-    const decadeTag = getDecadeTag(card.year);
-    if (!decadeTag) continue;
-
     const tags = (card.tags as string[]) ?? [];
-    if (!tags.includes(decadeTag)) {
-      const updatedTags = [...tags, decadeTag];
+    const missing = findMissingTags(card.playerName, card.year, tags);
+    if (missing.length > 0) {
+      const updatedTags = [...tags, ...missing];
       updateCard(db, card.id, { tags: updatedTags });
-      fixes.push({
-        cardId: card.id,
-        playerName: card.playerName,
-        year: card.year,
-        addedTag: decadeTag,
-      });
+      for (const tag of missing) {
+        fixes.push({ cardId: card.id, playerName: card.playerName, addedTag: tag });
+      }
     }
   }
 
