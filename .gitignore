@@ -28,3 +28,6 @@ public/uploads/
 .vscode/
 *.db-shm
 *.db-wal
+
+# TypeScript
+tsconfig.tsbuildinfo
