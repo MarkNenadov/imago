@@ -23,6 +23,7 @@ export function isIdentificationAvailable(): boolean {
 
 async function compressImage(imageBuffer: Buffer): Promise<Buffer> {
   return sharp(imageBuffer)
+    .rotate()
     .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: "inside" })
     .jpeg({ quality: 80 })
     .toBuffer();
