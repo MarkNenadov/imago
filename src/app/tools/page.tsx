@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import type { Card } from "@/db/schema";
+import { groupDuplicateCards, type DuplicateGroup } from "@/lib/duplicates";
 
 type LotStep = "select" | "generating" | "results";
 
@@ -316,6 +317,532 @@ function TagCleanup() {
   );
 }
 
+function DuplicateFinder({ cards }: { cards: Card[] }) {
+  const [groups, setGroups] = useState<DuplicateGroup[]>([]);
+  const [scanned, setScanned] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  function scan() {
+    setGroups(groupDuplicateCards(cards));
+    setScanned(true);
+  }
+
+  async function deleteCard(cardId: string) {
+    setDeleting(true);
+    const res = await fetch(`/api/cards/${cardId}`, { method: "DELETE" });
+    if (!res.ok) {
+      setDeleting(false);
+      setConfirmingId(null);
+      return;
+    }
+
+    setGroups((prev) =>
+      prev
+        .map((g) => ({
+          ...g,
+          cards: g.cards.filter((c) => c.id !== cardId),
+        }))
+        .filter((g) => g.cards.length >= 2),
+    );
+    setConfirmingId(null);
+    setDeleting(false);
+  }
+
+  return (
+    <div className="rounded-lg bg-white p-6 shadow-sm">
+      <h2 className="mb-1 text-lg font-semibold text-gray-900">
+        Duplicate Finder
+      </h2>
+      <p className="mb-4 text-sm text-gray-500">
+        Find cards that share the same player, year, brand, and set.
+      </p>
+
+      {!scanned && (
+        <button
+          onClick={scan}
+          disabled={cards.length === 0}
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50"
+        >
+          Scan for Duplicates
+        </button>
+      )}
+
+      {scanned && groups.length === 0 && (
+        <p className="text-sm text-green-600">
+          No duplicates found — every card is unique.
+        </p>
+      )}
+
+      {scanned && groups.length > 0 && (
+        <>
+          <p className="mb-4 text-sm text-gray-600">
+            Found {groups.length} group{groups.length !== 1 && "s"} of
+            potential duplicates.
+          </p>
+          <div className="max-h-[32rem] space-y-4 overflow-y-auto">
+            {groups.map((group) => {
+              const label = [
+                group.playerName,
+                group.year,
+                group.brand,
+                group.setName,
+              ]
+                .filter(Boolean)
+                .join(" · ");
+
+              return (
+                <div
+                  key={label}
+                  className="rounded border border-gray-200 p-3"
+                >
+                  <p className="mb-2 text-sm font-semibold text-gray-800">
+                    {label}
+                  </p>
+                  <div className="space-y-2">
+                    {group.cards.map((card) => (
+                      <div
+                        key={card.id}
+                        className="flex items-center justify-between rounded bg-gray-50 px-3 py-2 text-sm"
+                      >
+                        {card.imageFront && (
+                          <img
+                            src={card.imageFront}
+                            alt={card.playerName}
+                            className="mr-3 h-16 w-12 shrink-0 rounded object-cover"
+                          />
+                        )}
+                        <div className="flex flex-wrap gap-x-3 gap-y-1">
+                          {card.cardNumber && (
+                            <span className="text-gray-600">
+                              #{card.cardNumber}
+                            </span>
+                          )}
+                          {card.team && (
+                            <span className="text-gray-600">{card.team}</span>
+                          )}
+                          {card.condition && (
+                            <span className="text-gray-600">
+                              {card.condition}
+                            </span>
+                          )}
+                          {card.location && (
+                            <span className="text-gray-500">
+                              {card.location}
+                            </span>
+                          )}
+                          {!card.imageFront && (
+                            <span className="text-amber-500">no image</span>
+                          )}
+                        </div>
+                        <div className="ml-3 flex shrink-0 items-center gap-2">
+                          <Link
+                            href={`/collection/${card.id}`}
+                            className="text-xs text-blue-600 hover:underline"
+                          >
+                            View
+                          </Link>
+                          {confirmingId === card.id ? (
+                            <>
+                              <button
+                                onClick={() => deleteCard(card.id)}
+                                disabled={deleting}
+                                className="rounded bg-red-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
+                              >
+                                {deleting ? "Deleting..." : "Confirm"}
+                              </button>
+                              <button
+                                onClick={() => setConfirmingId(null)}
+                                disabled={deleting}
+                                className="text-xs text-gray-500 hover:text-gray-700"
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmingId(card.id)}
+                              className="text-xs text-red-600 hover:text-red-800"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+interface BulkCardSummary {
+  id: string;
+  playerName: string;
+  year: number | null;
+  brand: string | null;
+  team: string | null;
+}
+
+type BulkEditType = "tag" | "field";
+
+const FIELD_OPTIONS = [
+  { value: "location", label: "Location" },
+  { value: "purchasePrice", label: "Price" },
+  { value: "condition", label: "Condition" },
+  { value: "purchaseDate", label: "Purchase Date" },
+  { value: "purchaseSource", label: "Purchase Source" },
+] as const;
+
+const CONDITION_OPTIONS = [
+  "Mint",
+  "Near Mint",
+  "Excellent",
+  "Very Good",
+  "Good",
+  "Fair",
+  "Poor",
+] as const;
+
+function BulkEdit() {
+  const [editType, setEditType] = useState<BulkEditType>("tag");
+  const [fieldName, setFieldName] = useState("location");
+  const [tagName, setTagName] = useState("");
+  const [cards, setCards] = useState<BulkCardSummary[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [value, setValue] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [fetched, setFetched] = useState(false);
+  const [applied, setApplied] = useState(false);
+  const [updatedCount, setUpdatedCount] = useState(0);
+  const [locations, setLocations] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/stats?include=filterOptions")
+      .then((r) => r.json())
+      .then((data) => setLocations(data.filterOptions?.locations ?? []))
+      .catch(() => {});
+  }, []);
+
+  const activeName = editType === "tag" ? tagName.trim() : fieldName;
+
+  async function findCards() {
+    if (!activeName) return;
+    setLoading(true);
+    setFetched(false);
+    setApplied(false);
+    setSelected(new Set());
+
+    const params = new URLSearchParams({ type: editType, name: activeName });
+    const res = await fetch(`/api/tools/bulk-edit?${params}`);
+    const data = await res.json();
+    setCards(data.cards ?? []);
+    setFetched(true);
+    setLoading(false);
+
+    if (editType === "tag") {
+      setValue(tagName.trim());
+    } else {
+      setValue("");
+    }
+  }
+
+  function toggleCard(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (selected.size === cards.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(cards.map((c) => c.id)));
+    }
+  }
+
+  async function applyBulkEdit() {
+    if (selected.size === 0 || !value.trim()) return;
+    setLoading(true);
+
+    const res = await fetch("/api/tools/bulk-edit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        cardIds: [...selected],
+        type: editType,
+        name: activeName,
+        value: value.trim(),
+      }),
+    });
+    const data = await res.json();
+    setUpdatedCount(data.updated ?? 0);
+    setApplied(true);
+    setLoading(false);
+  }
+
+  function reset() {
+    setCards([]);
+    setSelected(new Set());
+    setValue("");
+    setFetched(false);
+    setApplied(false);
+    setUpdatedCount(0);
+  }
+
+  function renderValueInput() {
+    if (fieldName === "condition" && editType === "field") {
+      return (
+        <select
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+        >
+          <option value="">--</option>
+          {CONDITION_OPTIONS.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      );
+    }
+
+    if (fieldName === "purchasePrice" && editType === "field") {
+      return (
+        <input
+          type="number"
+          step="0.01"
+          min="0"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="0.00"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+        />
+      );
+    }
+
+    if (fieldName === "purchaseDate" && editType === "field") {
+      return (
+        <input
+          type="date"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+        />
+      );
+    }
+
+    if (fieldName === "location" && editType === "field") {
+      return (
+        <>
+          <input
+            type="text"
+            list="bulk-location-options"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="e.g., Box 3"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          />
+          <datalist id="bulk-location-options">
+            {locations.map((loc) => (
+              <option key={loc} value={loc} />
+            ))}
+          </datalist>
+        </>
+      );
+    }
+
+    return (
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={editType === "tag" ? "Tag value" : "Value"}
+        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+      />
+    );
+  }
+
+  return (
+    <div className="rounded-lg bg-white p-6 shadow-sm">
+      <h2 className="mb-1 text-lg font-semibold text-gray-900">Bulk Edit</h2>
+      <p className="mb-4 text-sm text-gray-500">
+        Apply a tag or field value to multiple cards at once. Finds cards missing the chosen tag/field.
+      </p>
+
+      {!applied && (
+        <>
+          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Type
+              </label>
+              <select
+                value={editType}
+                onChange={(e) => {
+                  setEditType(e.target.value as BulkEditType);
+                  reset();
+                }}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              >
+                <option value="tag">Tag</option>
+                <option value="field">Field</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                {editType === "tag" ? "Tag Name" : "Field"}
+              </label>
+              {editType === "tag" ? (
+                <input
+                  type="text"
+                  value={tagName}
+                  onChange={(e) => {
+                    setTagName(e.target.value);
+                    if (fetched) reset();
+                  }}
+                  placeholder="e.g., batters, pitchers, HOF"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                />
+              ) : (
+                <select
+                  value={fieldName}
+                  onChange={(e) => {
+                    setFieldName(e.target.value);
+                    if (fetched) reset();
+                  }}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                >
+                  {FIELD_OPTIONS.map((f) => (
+                    <option key={f.value} value={f.value}>{f.label}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          </div>
+
+          {!fetched && (
+            <button
+              onClick={findCards}
+              disabled={loading || !activeName}
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50"
+            >
+              {loading ? "Searching..." : "Find Cards"}
+            </button>
+          )}
+
+          {fetched && (
+            <>
+              {cards.length === 0 ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-green-600">
+                    No cards are missing this {editType === "tag" ? "tag" : "field"}.
+                  </p>
+                  <button
+                    onClick={reset}
+                    className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Search Again
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="text-sm text-gray-600">
+                      {cards.length} card{cards.length !== 1 && "s"} missing
+                      {editType === "tag"
+                        ? ` "${tagName.trim()}" tag`
+                        : ` ${FIELD_OPTIONS.find((f) => f.value === fieldName)?.label}`}
+                    </p>
+                    <button
+                      onClick={toggleAll}
+                      className="text-xs font-medium text-blue-600 hover:text-blue-800"
+                    >
+                      {selected.size === cards.length ? "Deselect All" : "Select All"}
+                    </button>
+                  </div>
+
+                  <div className="mb-4 max-h-60 space-y-1 overflow-y-auto rounded border border-gray-200 p-2">
+                    {cards.map((card) => (
+                      <label
+                        key={card.id}
+                        className="flex cursor-pointer items-center gap-3 rounded px-2 py-1.5 hover:bg-gray-50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected.has(card.id)}
+                          onChange={() => toggleCard(card.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        <span className="flex-1 truncate text-sm">
+                          {card.playerName}
+                          <span className="ml-2 text-gray-400">
+                            {[card.year, card.brand, card.team].filter(Boolean).join(" · ")}
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="mb-4 max-w-xs">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Value to Apply
+                    </label>
+                    {renderValueInput()}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={applyBulkEdit}
+                      disabled={loading || selected.size === 0 || !value.trim()}
+                      className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50"
+                    >
+                      {loading
+                        ? "Applying..."
+                        : `Apply to ${selected.size} Card${selected.size !== 1 ? "s" : ""}`}
+                    </button>
+                    <button
+                      onClick={reset}
+                      className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {applied && (
+        <div className="space-y-3">
+          <p className="text-sm text-green-600">
+            Updated {updatedCount} card{updatedCount !== 1 && "s"}.
+          </p>
+          <button
+            onClick={reset}
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Do Another
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface IncompleteCard {
   id: string;
   playerName: string;
@@ -342,7 +869,7 @@ function DataAudit() {
     <div className="rounded-lg bg-white p-6 shadow-sm">
       <h2 className="mb-1 text-lg font-semibold text-gray-900">Data Audit</h2>
       <p className="mb-4 text-sm text-gray-500">
-        Find cards missing important fields: price, condition, purchase date, team, or front image.
+        Find cards missing important fields: price, condition, purchase date, team, front image, or position tag (batter/pitcher/manager).
       </p>
 
       {!scanned && (
@@ -403,8 +930,90 @@ function DataAudit() {
   );
 }
 
+// TODO: Remove this component once the one-time backfill is done.
+function QuickBackfill() {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  const JOBS = [
+    { year: 1990, brand: "Topps", price: 0.02, date: "2026-01-27" },
+    { year: 1988, brand: "Donruss", price: 0.02, date: "2026-02-05" },
+  ] as const;
+
+  async function run() {
+    setLoading(true);
+    const res = await fetch("/api/cards?sortBy=playerName&sortOrder=asc");
+    const allCards = await res.json() as { id: string; year: number | null; brand: string | null; purchasePrice: number | null; purchaseDate: string | null; purchaseSource: string | null }[];
+
+    let total = 0;
+    for (const job of JOBS) {
+      const matches = allCards.filter(
+        (c) => c.year === job.year && c.brand?.toLowerCase() === job.brand.toLowerCase(),
+      );
+      for (const card of matches) {
+        const updates: Record<string, unknown> = {};
+        if (card.purchasePrice == null) updates.purchasePrice = job.price;
+        if (!card.purchaseDate) updates.purchaseDate = job.date;
+        if (!card.purchaseSource) updates.purchaseSource = "Facebook Marketplace";
+        if (Object.keys(updates).length === 0) continue;
+
+        await fetch(`/api/cards/${card.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updates),
+        });
+        total++;
+      }
+    }
+
+    setResult(`Done! Updated ${total} card${total !== 1 ? "s" : ""}.`);
+    setLoading(false);
+  }
+
+  if (result) {
+    return (
+      <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 p-6">
+        <h2 className="mb-1 text-lg font-semibold text-gray-900">Quick Backfill</h2>
+        <p className="text-sm text-green-600">{result}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 p-6">
+      <h2 className="mb-1 text-lg font-semibold text-gray-900">Quick Backfill</h2>
+      <p className="mb-1 text-sm text-gray-500">
+        One-time fill for cards missing price/date/source:
+      </p>
+      <ul className="mb-4 list-inside list-disc text-sm text-gray-600">
+        <li>1990 Topps &rarr; $0.02, Jan 27 2026, Facebook Marketplace</li>
+        <li>1988 Donruss &rarr; $0.02, Feb 5 2026, Facebook Marketplace</li>
+      </ul>
+      <p className="mb-4 text-xs text-amber-600">
+        Only fills missing values — existing prices, dates, and sources are left alone.
+      </p>
+      <button
+        onClick={run}
+        disabled={loading}
+        className="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-500 disabled:opacity-50"
+      >
+        {loading ? "Running..." : "Run Backfill"}
+      </button>
+    </div>
+  );
+}
+
+type ToolsTab = "audit" | "bulk" | "export";
+
+const TABS: { key: ToolsTab; label: string }[] = [
+  { key: "audit", label: "Audit & Cleanup" },
+  { key: "bulk", label: "Bulk Operations" },
+  { key: "export", label: "Export & Listings" },
+];
+
 export default function ToolsPage() {
   const [cards, setCards] = useState<Card[]>([]);
+  const [activeTab, setActiveTab] = useState<ToolsTab>("audit");
 
   useEffect(() => {
     fetch("/api/cards?sortBy=playerName&sortOrder=asc")
@@ -414,28 +1023,59 @@ export default function ToolsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Tools</h1>
+      <h1 className="mb-4 text-2xl font-bold text-gray-900">Tools</h1>
+
+      <div className="mb-6 flex gap-1 border-b border-gray-200">
+        {TABS.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === key
+                ? "border-b-2 border-blue-600 font-semibold text-blue-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       <div className="space-y-8">
-        <div className="rounded-lg bg-white p-6 shadow-sm">
-          <h2 className="mb-1 text-lg font-semibold text-gray-900">CSV Export</h2>
-          <p className="mb-4 text-sm text-gray-500">
-            Download your entire collection as a CSV spreadsheet.
-          </p>
-          <a
-            href="/api/tools/csv"
-            download
-            className="inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
-          >
-            Export CSV
-          </a>
-        </div>
+        {activeTab === "audit" && (
+          <>
+            <DataAudit />
+            <TagCleanup />
+            <DuplicateFinder cards={cards} />
+          </>
+        )}
 
-        <TagCleanup />
+        {activeTab === "bulk" && (
+          <>
+            <BulkEdit />
+            {/* TODO: Remove once backfill is done */}
+            <QuickBackfill />
+          </>
+        )}
 
-        <DataAudit />
-
-        <LotBuilder cards={cards} />
+        {activeTab === "export" && (
+          <>
+            <div className="rounded-lg bg-white p-6 shadow-sm">
+              <h2 className="mb-1 text-lg font-semibold text-gray-900">CSV Export</h2>
+              <p className="mb-4 text-sm text-gray-500">
+                Download your entire collection as a CSV spreadsheet.
+              </p>
+              <a
+                href="/api/tools/csv"
+                download
+                className="inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+              >
+                Export CSV
+              </a>
+            </div>
+            <LotBuilder cards={cards} />
+          </>
+        )}
       </div>
     </div>
   );

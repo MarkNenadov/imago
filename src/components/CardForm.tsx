@@ -22,6 +22,7 @@ export interface CardFormData {
   imageBack?: string;
   notes?: string;
   tags: string[];
+  imageHashes?: { hash: string; imagePath: string }[];
 }
 
 interface CardFormProps {
@@ -32,7 +33,15 @@ interface CardFormProps {
 
 export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps) {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [locations, setLocations] = useState<string[]>([]);
+
+  useEffect(() => {
+    setMounted(true);
+    fetch("/api/stats?include=filterOptions")
+      .then((r) => r.json())
+      .then((data) => setLocations(data.filterOptions?.locations ?? []))
+      .catch(() => {});
+  }, []);
 
   const [formData, setFormData] = useState<CardFormData>({
     playerName: initialValues?.playerName ?? "",
@@ -115,6 +124,13 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
     setTagInput("");
   }
 
+  function addImageHash(hash: string, imagePath: string) {
+    setFormData((prev) => ({
+      ...prev,
+      imageHashes: [...(prev.imageHashes ?? []), { hash, imagePath }],
+    }));
+  }
+
   function removeTag(tag: string) {
     updateField("tags", formData.tags.filter((t) => t !== tag));
   }
@@ -148,15 +164,19 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <ImageUpload
             label="Front"
-            onUpload={(path, file) => {
+            onUpload={(path, file, hash) => {
               updateField("imageFront", path);
+              addImageHash(hash, path);
               identifyFromImage(file);
             }}
             currentImage={formData.imageFront || undefined}
           />
           <ImageUpload
             label="Back (optional)"
-            onUpload={(path) => updateField("imageBack", path)}
+            onUpload={(path, _file, hash) => {
+              updateField("imageBack", path);
+              addImageHash(hash, path);
+            }}
             currentImage={formData.imageBack || undefined}
           />
         </div>
@@ -308,11 +328,17 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
               <input
                 id="location"
                 type="text"
+                list="location-options"
                 value={formData.location ?? ""}
                 onChange={(e) => updateField("location", e.target.value)}
                 placeholder="e.g., Box 3"
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
+              <datalist id="location-options">
+                {locations.map((loc) => (
+                  <option key={loc} value={loc} />
+                ))}
+              </datalist>
             </div>
 
             <div className="sm:col-span-2 lg:col-span-3">
@@ -409,6 +435,21 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
       {/* Tags */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">Tags</h2>
+
+        <div className="flex flex-wrap gap-2">
+          {["batters", "pitchers", "managers"]
+            .filter((t) => !formData.tags.includes(t))
+            .map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => updateField("tags", [...formData.tags, t])}
+                className="rounded-full border border-gray-300 px-3 py-1 text-sm text-gray-600 hover:bg-gray-100"
+              >
+                + {t}
+              </button>
+            ))}
+        </div>
 
         <div>
           <div className="flex gap-2">

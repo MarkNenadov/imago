@@ -1,4 +1,4 @@
-import { eq, like, or, desc, asc, type AnyColumn } from "drizzle-orm";
+import { eq, like, or, and, desc, asc, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import { cards, type Card, type NewCard } from "./schema";
 import type { getDb } from "./index";
@@ -22,30 +22,39 @@ interface ListFilters {
   team?: string;
   year?: number;
   tag?: string;
+  setName?: string;
   sortBy?: keyof Card;
   sortOrder?: "asc" | "desc";
+  limit?: number;
+  offset?: number;
+}
+
+export interface PaginatedCards {
+  cards: Card[];
+  total: number;
 }
 
 export function listCards(db: DrizzleDb, filters?: ListFilters): Card[] {
-  let query = db.select().from(cards).$dynamic();
+  return listCardsPaginated(db, filters).cards;
+}
 
-  if (filters?.sport) {
-    query = query.where(eq(cards.sport, filters.sport));
-  }
-  if (filters?.location) {
-    query = query.where(eq(cards.location, filters.location));
-  }
-  if (filters?.brand) {
-    query = query.where(eq(cards.brand, filters.brand));
-  }
-  if (filters?.team) {
-    query = query.where(eq(cards.team, filters.team));
-  }
-  if (filters?.year) {
-    query = query.where(eq(cards.year, filters.year));
-  }
-  if (filters?.tag) {
-    query = query.where(like(cards.tags, `%"${filters.tag}"%`));
+export function listCardsPaginated(db: DrizzleDb, filters?: ListFilters): PaginatedCards {
+  let query = db.select().from(cards).$dynamic();
+  let countQuery = db.select({ count: sql<number>`count(*)` }).from(cards).$dynamic();
+
+  const conditions: SQL[] = [];
+  if (filters?.sport) conditions.push(eq(cards.sport, filters.sport));
+  if (filters?.location) conditions.push(eq(cards.location, filters.location));
+  if (filters?.brand) conditions.push(eq(cards.brand, filters.brand));
+  if (filters?.team) conditions.push(eq(cards.team, filters.team));
+  if (filters?.year) conditions.push(eq(cards.year, filters.year));
+  if (filters?.tag) conditions.push(like(cards.tags, `%"${filters.tag}"%`));
+  if (filters?.setName) conditions.push(eq(cards.setName, filters.setName));
+
+  if (conditions.length > 0) {
+    const where = and(...conditions)!;
+    query = query.where(where);
+    countQuery = countQuery.where(where);
   }
 
   if (filters?.sortBy) {
@@ -66,7 +75,16 @@ export function listCards(db: DrizzleDb, filters?: ListFilters): Card[] {
     }
   }
 
-  return query.all();
+  const total = countQuery.get()!.count;
+
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+  if (filters?.offset) {
+    query = query.offset(filters.offset);
+  }
+
+  return { cards: query.all(), total };
 }
 
 export function searchCards(db: DrizzleDb, query: string): Card[] {

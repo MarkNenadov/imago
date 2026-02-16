@@ -164,7 +164,16 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
               <dt className="text-sm text-gray-500">Number</dt>
               <dd className="text-sm text-gray-900">{card.cardNumber ?? "--"}</dd>
               <dt className="text-sm text-gray-500">Team</dt>
-              <dd className="text-sm text-gray-900">{card.team ?? "--"}</dd>
+              <dd className="text-sm text-gray-900">
+                {card.team ? (
+                  <Link
+                    href={`/collection?team=${encodeURIComponent(card.team)}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    {card.team}
+                  </Link>
+                ) : "--"}
+              </dd>
               <dt className="text-sm text-gray-500">Sport</dt>
               <dd className="text-sm text-gray-900">{card.sport}</dd>
               <dt className="text-sm text-gray-500">Variant</dt>
@@ -192,7 +201,16 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
               <dt className="text-sm text-gray-500">Source</dt>
               <dd className="text-sm text-gray-900">{card.purchaseSource ?? "--"}</dd>
               <dt className="text-sm text-gray-500">Location</dt>
-              <dd className="text-sm text-gray-900">{card.location ?? "--"}</dd>
+              <dd className="text-sm text-gray-900">
+                {card.location ? (
+                  <Link
+                    href={`/collection?location=${encodeURIComponent(card.location)}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    {card.location}
+                  </Link>
+                ) : "--"}
+              </dd>
             </dl>
           </section>
 

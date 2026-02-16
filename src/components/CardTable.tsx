@@ -22,7 +22,6 @@ export function CardTable({ cards }: CardTableProps) {
             <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Player</th>
             <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Year</th>
             <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Brand</th>
-            <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Set</th>
             <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Team</th>
             <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Price</th>
           </tr>
@@ -37,7 +36,6 @@ export function CardTable({ cards }: CardTableProps) {
               </td>
               <td className="px-4 py-3 text-sm text-gray-500">{card.year}</td>
               <td className="px-4 py-3 text-sm text-gray-500">{card.brand}</td>
-              <td className="px-4 py-3 text-sm text-gray-500">{card.setName}</td>
               <td className="px-4 py-3 text-sm text-gray-500">{card.team}</td>
               <td className="px-4 py-3 text-sm text-gray-500">
                 {card.purchasePrice != null ? `$${card.purchasePrice.toFixed(2)}` : "--"}

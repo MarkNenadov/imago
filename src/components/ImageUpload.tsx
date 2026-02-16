@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 
 interface ImageUploadProps {
   label: string;
-  onUpload: (path: string, file: File) => void;
+  onUpload: (path: string, file: File, hash: string) => void;
   currentImage?: string;
 }
 
@@ -36,8 +36,8 @@ export function ImageUpload({ label, onUpload, currentImage }: ImageUploadProps)
           throw new Error(data.error ?? "Upload failed");
         }
 
-        const { path } = await response.json();
-        onUpload(path, file);
+        const { path, hash } = await response.json();
+        onUpload(path, file, hash);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Upload failed");
       } finally {

@@ -17,6 +17,7 @@ interface CollectionStats {
   byDecade: Record<string, number>;
   rookieVsNon: Record<string, number>;
   batterVsPitcher: Record<string, number>;
+  hofVsNon: Record<string, number>;
 }
 
 export function getCollectionStats(db: DrizzleDb): CollectionStats {
@@ -39,6 +40,7 @@ export function getCollectionStats(db: DrizzleDb): CollectionStats {
   const byDecade: Record<string, number> = {};
   const rookieVsNon: Record<string, number> = { "Rookie Card": 0, "Non-Rookie": 0 };
   const batterVsPitcher: Record<string, number> = { Batter: 0, Pitcher: 0, Unknown: 0 };
+  const hofVsNon: Record<string, number> = { "Hall of Famer": 0, "Non-HOF": 0 };
 
   for (const card of allCards) {
     bySport[card.sport] = (bySport[card.sport] ?? 0) + 1;
@@ -85,6 +87,13 @@ export function getCollectionStats(db: DrizzleDb): CollectionStats {
     } else {
       batterVsPitcher["Unknown"] += 1;
     }
+
+    // HOF vs non-HOF
+    if (tagSet.has("hof")) {
+      hofVsNon["Hall of Famer"] += 1;
+    } else {
+      hofVsNon["Non-HOF"] += 1;
+    }
   }
 
   return {
@@ -101,11 +110,14 @@ export function getCollectionStats(db: DrizzleDb): CollectionStats {
     byDecade,
     rookieVsNon,
     batterVsPitcher,
+    hofVsNon,
   };
 }
 
 export interface FilterOptions {
   brands: string[];
+  locations: string[];
+  setNames: string[];
   tags: string[];
   teams: string[];
 }
@@ -114,11 +126,15 @@ export function getFilterOptions(db: DrizzleDb): FilterOptions {
   const allCards = db.select().from(cards).all();
 
   const brandSet = new Set<string>();
+  const locationSet = new Set<string>();
+  const setNameSet = new Set<string>();
   const tagSet = new Set<string>();
   const teamSet = new Set<string>();
 
   for (const card of allCards) {
     if (card.brand) brandSet.add(card.brand);
+    if (card.location) locationSet.add(card.location);
+    if (card.setName) setNameSet.add(card.setName);
     if (card.team) teamSet.add(card.team);
     if (card.tags) {
       for (const tag of card.tags as string[]) {
@@ -129,6 +145,8 @@ export function getFilterOptions(db: DrizzleDb): FilterOptions {
 
   return {
     brands: [...brandSet].sort(),
+    locations: [...locationSet].sort(),
+    setNames: [...setNameSet].sort(),
     tags: [...tagSet].sort(),
     teams: [...teamSet].sort(),
   };

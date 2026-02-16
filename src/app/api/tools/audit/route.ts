@@ -16,6 +16,8 @@ const IMPORTANT_FIELDS = [
   { key: "imageFront", label: "Front Image" },
 ] as const;
 
+const POSITION_TAGS = ["batter", "batters", "pitcher", "pitchers", "manager", "managers"];
+
 export async function GET() {
   const db = getDb();
   const allCards = listCards(db);
@@ -28,6 +30,12 @@ export async function GET() {
       if (value == null || value === "") {
         missing.push(label);
       }
+    }
+
+    const tags = (card.tags as string[]) ?? [];
+    const hasPositionTag = tags.some((t) => POSITION_TAGS.includes(t.toLowerCase()));
+    if (!hasPositionTag) {
+      missing.push("Position Tag");
     }
     if (missing.length > 0) {
       incomplete.push({

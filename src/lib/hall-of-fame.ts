@@ -254,11 +254,21 @@ const BASEBALL_HOF_MEMBERS = new Set([
   "Robin Yount",
 ]);
 
-/** Normalized lookup set for case-insensitive matching */
+/** Strip periods from Jr/Sr suffixes for consistent matching */
+function normalizeSuffix(name: string): string {
+  return name.replace(/\b(Jr|Sr)\./gi, "$1").trim();
+}
+
+/** Normalized lookup set for case-insensitive, suffix-insensitive matching */
 const NORMALIZED_HOF = new Set(
-  [...BASEBALL_HOF_MEMBERS].map((name) => name.toLowerCase()),
+  [...BASEBALL_HOF_MEMBERS].map((name) => normalizeSuffix(name).toLowerCase()),
 );
 
 export function isHallOfFamer(playerName: string): boolean {
-  return NORMALIZED_HOF.has(playerName.trim().toLowerCase());
+  return NORMALIZED_HOF.has(normalizeSuffix(playerName).trim().toLowerCase());
+}
+
+/** Normalize Jr/Sr in a player name to always include the period */
+export function normalizePlayerName(name: string): string {
+  return name.replace(/\b(Jr|Sr)\.?\b/g, "$1.").trim();
 }

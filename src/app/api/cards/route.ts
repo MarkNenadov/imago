@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/db";
-import { createCard, listCards, searchCards } from "@/db/cards";
-import { isHallOfFamer } from "@/lib/hall-of-fame";
+import { createCard, listCards, listCardsPaginated, searchCards } from "@/db/cards";
+import { imageHashes } from "@/db/schema";
+import { isHallOfFamer, normalizePlayerName } from "@/lib/hall-of-fame";
 
 export async function GET(request: NextRequest) {
   const db = getDb();
@@ -20,9 +21,17 @@ export async function GET(request: NextRequest) {
     team: params.get("team") ?? undefined,
     year: params.has("year") ? Number(params.get("year")) : undefined,
     tag: params.get("tag") ?? undefined,
+    setName: params.get("setName") ?? undefined,
     sortBy: (params.get("sortBy") as keyof ReturnType<typeof listCards>[number]) ?? undefined,
     sortOrder: (params.get("sortOrder") as "asc" | "desc") ?? undefined,
+    limit: params.has("limit") ? Number(params.get("limit")) : undefined,
+    offset: params.has("offset") ? Number(params.get("offset")) : undefined,
   };
+
+  if (filters.limit) {
+    const result = listCardsPaginated(db, filters);
+    return NextResponse.json(result);
+  }
 
   const cards = listCards(db, filters);
   return NextResponse.json(cards);
@@ -39,6 +48,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const playerName = normalizePlayerName(body.playerName);
+  if (body.location) body.location = body.location.trim();
+
   const tags: string[] = Array.isArray(body.tags) ? [...body.tags] : [];
   if (body.year) {
     const decade = Math.floor(body.year / 10) * 10;
@@ -48,10 +60,21 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (isHallOfFamer(body.playerName) && !tags.includes("HOF")) {
+  if (isHallOfFamer(playerName) && !tags.includes("HOF")) {
     tags.push("HOF");
   }
 
-  const card = createCard(db, { ...body, tags });
+  const card = createCard(db, { ...body, playerName, tags });
+
+  const hashes: { hash: string; imagePath: string }[] = Array.isArray(body.imageHashes)
+    ? body.imageHashes
+    : [];
+  for (const { hash, imagePath } of hashes) {
+    db.insert(imageHashes)
+      .values({ hash, imagePath })
+      .onConflictDoNothing()
+      .run();
+  }
+
   return NextResponse.json(card, { status: 201 });
 }

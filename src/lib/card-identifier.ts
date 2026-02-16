@@ -58,6 +58,7 @@ export async function identifyCard(
   }
 
   const data = await response.json();
+  console.log("[CardSight] Raw API response:", JSON.stringify(data, null, 2));
 
   if (!data.success || !data.detections?.length) {
     return null;
@@ -66,7 +67,7 @@ export async function identifyCard(
   const detection = data.detections[0];
   const card = detection.card;
 
-  return {
+  const result = {
     playerName: card.name ?? "",
     year: card.year ? Number(card.year) : undefined,
     brand: card.manufacturer ?? undefined,
@@ -75,4 +76,7 @@ export async function identifyCard(
     variant: card.parallel?.name ?? undefined,
     confidence: detection.confidence ?? undefined,
   };
+  console.log("[CardSight] Mapped result:", JSON.stringify(result, null, 2));
+
+  return result;
 }

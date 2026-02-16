@@ -8,6 +8,7 @@ interface FiltersState {
   brand: string;
   team: string;
   tag: string;
+  setName: string;
   q: string;
   sortBy: string;
   sortOrder: string;
@@ -22,22 +23,37 @@ export type { FiltersState };
 
 export function CollectionFilters({ filters, onChange }: CollectionFiltersProps) {
   const [brands, setBrands] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
+  const [setNames, setSetNames] = useState<string[]>([]);
   const [teams, setTeams] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/stats?include=filterOptions")
       .then((res) => res.json())
       .then((data) => {
         setBrands(data.filterOptions?.brands ?? []);
+        setLocations(data.filterOptions?.locations ?? []);
+        setSetNames(data.filterOptions?.setNames ?? []);
         setTeams(data.filterOptions?.teams ?? []);
         setTags(data.filterOptions?.tags ?? []);
       });
   }, []);
 
+  // Auto-expand when a "more" filter is active
+  useEffect(() => {
+    if (filters.setName || filters.location) {
+      setMoreOpen(true);
+    }
+  }, [filters.setName, filters.location]);
+
   function update(key: keyof FiltersState, value: string) {
     onChange({ ...filters, [key]: value });
   }
+
+  const moreFilterCount =
+    (filters.setName ? 1 : 0) + (filters.location ? 1 : 0);
 
   return (
     <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4">
@@ -62,17 +78,6 @@ export function CollectionFilters({ filters, onChange }: CollectionFiltersProps)
           <option value="baseball">Baseball</option>
           <option value="hockey">Hockey</option>
         </select>
-      </div>
-
-      <div>
-        <label className="block text-xs font-medium text-gray-500">Location</label>
-        <input
-          type="text"
-          value={filters.location}
-          onChange={(e) => update("location", e.target.value)}
-          placeholder="e.g., Box 3"
-          className="mt-1 w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
-        />
       </div>
 
       <div>
@@ -115,6 +120,64 @@ export function CollectionFilters({ filters, onChange }: CollectionFiltersProps)
             <option key={tag} value={tag}>{tag}</option>
           ))}
         </select>
+      </div>
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setMoreOpen((prev) => !prev)}
+          className="flex w-full items-center justify-between text-xs font-medium text-gray-500 hover:text-gray-700"
+        >
+          <span>
+            More Filters
+            {!moreOpen && moreFilterCount > 0 && (
+              <span className="ml-1 inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700">
+                {moreFilterCount}
+              </span>
+            )}
+          </span>
+          <svg
+            className={`h-4 w-4 transition-transform ${moreOpen ? "rotate-180" : ""}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+          </svg>
+        </button>
+
+        {moreOpen && (
+          <div className="mt-3 space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-500">Set</label>
+              <select
+                value={filters.setName}
+                onChange={(e) => update("setName", e.target.value)}
+                className="mt-1 w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
+              >
+                <option value="">All</option>
+                {setNames.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500">Location</label>
+              <select
+                value={filters.location}
+                onChange={(e) => update("location", e.target.value)}
+                className="mt-1 w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
+              >
+                <option value="">All</option>
+                {locations.map((loc) => (
+                  <option key={loc} value={loc}>{loc}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
       <hr className="border-gray-200" />

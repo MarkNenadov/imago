@@ -62,7 +62,7 @@ Copy the example env file and add your API key:
 cp .env.example .env
 ```
 
-Edit `.env` and add your [CardSight](https://cardsight.ai/) API key to enable AI-powered card identification from uploaded photos. Sign up at [cardsight.ai](https://cardsight.ai/) to get a key — the free tier includes 400 lookups per month. The app works without it — you'll just fill in card details manually.
+Edit `.env` and add your [CardSight](https://cardsight.ai/) API key to enable AI-powered card identification from uploaded photos. Sign up at [cardsight.ai](https://cardsight.ai/) to get a key — the free tier includes 750 lookups per month. The app works without it — you'll just fill in card details manually.
 
 ### Run the Dev Server
 

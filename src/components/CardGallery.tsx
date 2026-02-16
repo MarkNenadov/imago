@@ -38,7 +38,7 @@ export function CardGallery({ cards }: CardGalleryProps) {
           <div className="mt-2">
             <p className="truncate text-sm font-medium text-gray-900">{card.playerName}</p>
             <p className="truncate text-xs text-gray-500">
-              {[card.year, card.brand, card.setName].filter(Boolean).join(" ")}
+              {[card.year, card.brand].filter(Boolean).join(" ")}
             </p>
           </div>
         </Link>

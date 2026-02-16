@@ -9,9 +9,13 @@ import type { Card } from "@/db/schema";
 
 type ViewMode = "gallery" | "list";
 
+const PAGE_SIZE = 25;
+
 function CollectionContent() {
   const searchParams = useSearchParams();
   const [cards, setCards] = useState<Card[]>([]);
+  const [totalCards, setTotalCards] = useState(0);
+  const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<ViewMode>("gallery");
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<FiltersState>({
@@ -20,28 +24,44 @@ function CollectionContent() {
     brand: searchParams.get("brand") ?? "",
     team: searchParams.get("team") ?? "",
     tag: searchParams.get("tag") ?? "",
+    setName: searchParams.get("setName") ?? "",
     q: searchParams.get("q") ?? "",
     sortBy: searchParams.get("sortBy") ?? "",
     sortOrder: searchParams.get("sortOrder") ?? "asc",
   });
 
+  const totalPages = Math.max(1, Math.ceil(totalCards / PAGE_SIZE));
+
   const fetchCards = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
-    if (filters.q) params.set("q", filters.q);
-    if (filters.sport) params.set("sport", filters.sport);
-    if (filters.location) params.set("location", filters.location);
-    if (filters.brand) params.set("brand", filters.brand);
-    if (filters.team) params.set("team", filters.team);
-    if (filters.tag) params.set("tag", filters.tag);
-    if (filters.sortBy) params.set("sortBy", filters.sortBy);
-    if (filters.sortBy) params.set("sortOrder", filters.sortOrder);
+    if (filters.q) {
+      params.set("q", filters.q);
+    } else {
+      params.set("limit", String(PAGE_SIZE));
+      params.set("offset", String((page - 1) * PAGE_SIZE));
+      if (filters.sport) params.set("sport", filters.sport);
+      if (filters.location) params.set("location", filters.location);
+      if (filters.brand) params.set("brand", filters.brand);
+      if (filters.team) params.set("team", filters.team);
+      if (filters.tag) params.set("tag", filters.tag);
+      if (filters.setName) params.set("setName", filters.setName);
+      if (filters.sortBy) params.set("sortBy", filters.sortBy);
+      if (filters.sortBy) params.set("sortOrder", filters.sortOrder);
+    }
 
     const response = await fetch(`/api/cards?${params}`);
     const data = await response.json();
-    setCards(data);
+
+    if (filters.q) {
+      setCards(data);
+      setTotalCards(data.length);
+    } else {
+      setCards(data.cards);
+      setTotalCards(data.total);
+    }
     setLoading(false);
-  }, [filters]);
+  }, [filters, page]);
 
   useEffect(() => {
     fetchCards();
@@ -69,16 +89,75 @@ function CollectionContent() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
         <aside>
-          <CollectionFilters filters={filters} onChange={setFilters} />
+          <CollectionFilters
+            filters={filters}
+            onChange={(f) => {
+              setFilters(f);
+              setPage(1);
+            }}
+          />
         </aside>
 
         <div>
           {loading ? (
             <div className="py-12 text-center text-gray-500">Loading...</div>
-          ) : viewMode === "gallery" ? (
-            <CardGallery cards={cards} />
           ) : (
-            <CardTable cards={cards} />
+            <>
+              <p className="mb-3 text-sm text-gray-500">
+                {totalCards} card{totalCards !== 1 ? "s" : ""}
+                {totalPages > 1 && ` — page ${page} of ${totalPages}`}
+              </p>
+
+              {viewMode === "gallery" ? (
+                <CardGallery cards={cards} />
+              ) : (
+                <CardTable cards={cards} />
+              )}
+
+              {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                  >
+                    Previous
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+                    .reduce<(number | "...")[]>((acc, p) => {
+                      const last = acc[acc.length - 1];
+                      if (typeof last === "number" && p - last > 1) acc.push("...");
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((p, i) =>
+                      p === "..." ? (
+                        <span key={`ellipsis-${i}`} className="px-1 text-sm text-gray-400">...</span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => setPage(p)}
+                          className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                            p === page
+                              ? "bg-blue-600 text-white"
+                              : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      ),
+                    )}
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

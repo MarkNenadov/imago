@@ -48,7 +48,5 @@ export async function POST(request: NextRequest) {
   await mkdir(path.dirname(fullPath), { recursive: true });
   await writeFile(fullPath, buffer);
 
-  db.insert(imageHashes).values({ hash, imagePath }).run();
-
-  return NextResponse.json({ path: imagePath }, { status: 201 });
+  return NextResponse.json({ path: imagePath, hash }, { status: 201 });
 }

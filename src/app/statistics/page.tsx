@@ -14,10 +14,13 @@ interface Stats {
   byDecade: Record<string, number>;
   rookieVsNon: Record<string, number>;
   batterVsPitcher: Record<string, number>;
+  hofVsNon: Record<string, number>;
 }
 
-function BarChart({ data, label }: { data: Record<string, number>; label: string }) {
-  const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
+function BarChart({ data, label, presorted = false }: { data: Record<string, number>; label: string; presorted?: boolean }) {
+  const entries = presorted
+    ? Object.entries(data)
+    : Object.entries(data).sort((a, b) => b[1] - a[1]);
   if (entries.length === 0) {
     return <p className="text-sm text-gray-400">No data yet</p>;
   }
@@ -41,6 +44,47 @@ function BarChart({ data, label }: { data: Record<string, number>; label: string
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function CollapsibleBarChart({ data, label, previewCount = 5 }: { data: Record<string, number>; label: string; previewCount?: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
+
+  if (entries.length === 0) {
+    return <p className="text-sm text-gray-400">No data yet</p>;
+  }
+
+  const visible = expanded ? entries : entries.slice(0, previewCount);
+  const max = Math.max(...entries.map(([, v]) => v));
+  const remaining = entries.length - previewCount;
+
+  return (
+    <div>
+      <h3 className="mb-3 text-sm font-semibold text-gray-700">By {label}</h3>
+      <div className="space-y-2">
+        {visible.map(([name, count]) => (
+          <div key={name} className="flex items-center gap-3">
+            <span className="w-36 truncate text-right text-xs text-gray-600">{name}</span>
+            <div className="flex-1">
+              <div
+                className="h-5 rounded bg-blue-500"
+                style={{ width: `${(count / max) * 100}%` }}
+              />
+            </div>
+            <span className="w-8 text-right text-xs font-medium text-gray-700">{count}</span>
+          </div>
+        ))}
+      </div>
+      {remaining > 0 && (
+        <button
+          onClick={() => setExpanded((prev) => !prev)}
+          className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-800"
+        >
+          {expanded ? "Show less" : `Show all ${entries.length} teams`}
+        </button>
+      )}
     </div>
   );
 }
@@ -87,25 +131,28 @@ export default function StatisticsPage() {
 
       <div className="space-y-8">
         <div className="rounded-lg bg-white p-6 shadow-sm">
-          <BarChart data={stats.byTeam} label="Team" />
+          <CollapsibleBarChart data={stats.byTeam} label="Team" previewCount={10} />
         </div>
         <div className="rounded-lg bg-white p-6 shadow-sm">
-          <BarChart data={sortByKey(stats.byYear)} label="Year" />
+          <BarChart data={sortByKey(stats.byYear)} label="Year" presorted />
         </div>
         <div className="rounded-lg bg-white p-6 shadow-sm">
           <BarChart data={stats.byBrand} label="Brand" />
         </div>
         <div className="rounded-lg bg-white p-6 shadow-sm">
-          <BarChart data={sortByKey(stats.byEntryMonth)} label="Entry Month" />
+          <BarChart data={sortByKey(stats.byEntryMonth)} label="Entry Month" presorted />
         </div>
         <div className="rounded-lg bg-white p-6 shadow-sm">
-          <BarChart data={stats.byDecade} label="Decade" />
+          <BarChart data={sortByKey(stats.byDecade)} label="Decade" presorted />
         </div>
         <div className="rounded-lg bg-white p-6 shadow-sm">
           <BarChart data={stats.rookieVsNon} label="Rookie Status" />
         </div>
         <div className="rounded-lg bg-white p-6 shadow-sm">
           <BarChart data={stats.batterVsPitcher} label="Position Type" />
+        </div>
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <BarChart data={stats.hofVsNon} label="Hall of Fame Status" />
         </div>
       </div>
     </div>
