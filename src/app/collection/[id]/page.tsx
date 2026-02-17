@@ -127,14 +127,14 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Images */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {card.imageFront ? (
             <img
               src={card.imageFront}
               alt={`${card.playerName} front`}
-              className="w-full rounded-lg"
+              className="w-full rounded-lg shadow-sm"
             />
           ) : (
             <div className="flex aspect-[2.5/3.5] items-center justify-center rounded-lg bg-gray-100 text-gray-400">
@@ -145,97 +145,133 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
             <img
               src={card.imageBack}
               alt={`${card.playerName} back`}
-              className="w-full rounded-lg"
+              className="w-full rounded-lg shadow-sm"
             />
           )}
         </div>
 
         {/* Details */}
-        <div className="space-y-6">
-          <section>
-            <h2 className="text-sm font-medium text-gray-500">Card Details</h2>
-            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2">
-              <dt className="text-sm text-gray-500">Year</dt>
-              <dd className="text-sm text-gray-900">{card.year ?? "--"}</dd>
-              <dt className="text-sm text-gray-500">Brand</dt>
-              <dd className="text-sm text-gray-900">{card.brand ?? "--"}</dd>
-              <dt className="text-sm text-gray-500">Set</dt>
-              <dd className="text-sm text-gray-900">{card.setName ?? "--"}</dd>
-              <dt className="text-sm text-gray-500">Number</dt>
-              <dd className="text-sm text-gray-900">{card.cardNumber ?? "--"}</dd>
-              <dt className="text-sm text-gray-500">Team</dt>
-              <dd className="text-sm text-gray-900">
-                {card.team ? (
+        <div className="space-y-4">
+          {/* Card Info */}
+          <div className="rounded-lg border border-gray-200 bg-white p-4">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Card Info</h2>
+            <div className="grid grid-cols-3 gap-3">
+              {card.year && (
+                <div>
+                  <p className="text-xs text-gray-500">Year</p>
+                  <p className="text-sm font-medium text-gray-900">{card.year}</p>
+                </div>
+              )}
+              {card.brand && (
+                <div>
+                  <p className="text-xs text-gray-500">Brand</p>
+                  <p className="text-sm font-medium text-gray-900">{card.brand}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-xs text-gray-500">Sport</p>
+                <p className="text-sm font-medium text-gray-900">{card.sport}</p>
+              </div>
+              {card.team && (
+                <div>
+                  <p className="text-xs text-gray-500">Team</p>
                   <Link
                     href={`/collection?team=${encodeURIComponent(card.team)}`}
-                    className="text-blue-600 hover:underline"
+                    className="text-sm font-medium text-blue-600 hover:underline"
                   >
                     {card.team}
                   </Link>
-                ) : "--"}
-              </dd>
-              <dt className="text-sm text-gray-500">Sport</dt>
-              <dd className="text-sm text-gray-900">{card.sport}</dd>
-              <dt className="text-sm text-gray-500">Variant</dt>
-              <dd className="text-sm text-gray-900">{card.variant ?? "--"}</dd>
-            </dl>
-          </section>
+                </div>
+              )}
+              {card.setName && (
+                <div>
+                  <p className="text-xs text-gray-500">Set</p>
+                  <p className="text-sm font-medium text-gray-900">{card.setName}</p>
+                </div>
+              )}
+              {card.cardNumber && (
+                <div>
+                  <p className="text-xs text-gray-500">Number</p>
+                  <p className="text-sm font-medium text-gray-900">{card.cardNumber}</p>
+                </div>
+              )}
+              {card.variant && (
+                <div>
+                  <p className="text-xs text-gray-500">Variant</p>
+                  <p className="text-sm font-medium text-gray-900">{card.variant}</p>
+                </div>
+              )}
+              {card.condition && (
+                <div>
+                  <p className="text-xs text-gray-500">Condition</p>
+                  <p className="text-sm font-medium text-gray-900">{card.condition}</p>
+                </div>
+              )}
+            </div>
+          </div>
 
-          <section>
-            <h2 className="text-sm font-medium text-gray-500">Condition</h2>
-            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2">
-              <dt className="text-sm text-gray-500">Condition</dt>
-              <dd className="text-sm text-gray-900">{card.condition ?? "--"}</dd>
-            </dl>
-          </section>
+          {/* Purchase & Location */}
+          {(card.purchasePrice != null || card.purchaseDate || card.purchaseSource || card.location) && (
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Purchase & Location</h2>
+              <div className="grid grid-cols-3 gap-3">
+                {card.purchasePrice != null && (
+                  <div>
+                    <p className="text-xs text-gray-500">Price</p>
+                    <p className="text-sm font-medium text-gray-900">${card.purchasePrice.toFixed(2)}</p>
+                  </div>
+                )}
+                {card.purchaseDate && (
+                  <div>
+                    <p className="text-xs text-gray-500">Date</p>
+                    <p className="text-sm font-medium text-gray-900">{card.purchaseDate}</p>
+                  </div>
+                )}
+                {card.purchaseSource && (
+                  <div>
+                    <p className="text-xs text-gray-500">Source</p>
+                    <p className="text-sm font-medium text-gray-900">{card.purchaseSource}</p>
+                  </div>
+                )}
+                {card.location && (
+                  <div>
+                    <p className="text-xs text-gray-500">Location</p>
+                    <Link
+                      href={`/collection?location=${encodeURIComponent(card.location)}`}
+                      className="text-sm font-medium text-blue-600 hover:underline"
+                    >
+                      {card.location}
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-          <section>
-            <h2 className="text-sm font-medium text-gray-500">Purchase & Location</h2>
-            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2">
-              <dt className="text-sm text-gray-500">Price</dt>
-              <dd className="text-sm text-gray-900">
-                {card.purchasePrice != null ? `$${card.purchasePrice.toFixed(2)}` : "--"}
-              </dd>
-              <dt className="text-sm text-gray-500">Date</dt>
-              <dd className="text-sm text-gray-900">{card.purchaseDate ?? "--"}</dd>
-              <dt className="text-sm text-gray-500">Source</dt>
-              <dd className="text-sm text-gray-900">{card.purchaseSource ?? "--"}</dd>
-              <dt className="text-sm text-gray-500">Location</dt>
-              <dd className="text-sm text-gray-900">
-                {card.location ? (
-                  <Link
-                    href={`/collection?location=${encodeURIComponent(card.location)}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    {card.location}
-                  </Link>
-                ) : "--"}
-              </dd>
-            </dl>
-          </section>
-
+          {/* Tags */}
           {card.tags && (card.tags as string[]).length > 0 && (
-            <section>
-              <h2 className="text-sm font-medium text-gray-500">Tags</h2>
-              <div className="mt-2 flex flex-wrap gap-2">
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Tags</h2>
+              <div className="flex flex-wrap gap-1.5">
                 {(card.tags as string[]).map((tag) => (
                   <Link
                     key={tag}
                     href={`/collection?tag=${encodeURIComponent(tag)}`}
-                    className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800 hover:bg-blue-200 transition-colors"
+                    className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs text-blue-800 transition-colors hover:bg-blue-200"
                   >
                     {tag}
                   </Link>
                 ))}
               </div>
-            </section>
+            </div>
           )}
 
+          {/* Notes */}
           {card.notes && (
-            <section>
-              <h2 className="text-sm font-medium text-gray-500">Notes</h2>
-              <p className="mt-2 text-sm text-gray-900">{card.notes}</p>
-            </section>
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Notes</h2>
+              <p className="text-sm text-gray-900">{card.notes}</p>
+            </div>
           )}
         </div>
       </div>
