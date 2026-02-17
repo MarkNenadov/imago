@@ -6,6 +6,8 @@ Upload card images, auto-identify cards via AI, browse and filter your collectio
 
 Note: This app has no authentication currently, and is intended to be used locally only.
 
+![image](https://github.com/MarkNenadov/imago/blob/main/screenshots/screenshot01.png)
+
 
 ## Features
 
