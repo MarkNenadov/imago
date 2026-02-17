@@ -2,7 +2,7 @@
 
 A sports card collection management app for tracking baseball and hockey cards. 
 
-Upload card images, auto-identify cards via AI, browse and filter your collection, view statistics, and generate lot listings for selling.
+Upload card images, auto-identify cards via AI (CardSight), browse and filter your collection, view statistics, and generate lot listings for selling.
 
 Note: This app has no authentication currently, and is intended to be used locally only.
 

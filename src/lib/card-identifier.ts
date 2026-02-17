@@ -15,7 +15,8 @@ export interface CardIdentificationResult {
 // team logo/name is usually visible on the card front.
 
 const CARDSIGHT_API_BASE = "https://api.cardsight.ai";
-const MAX_IMAGE_DIMENSION = 1024;
+const MAX_IMAGE_WIDTH = 900;
+const MAX_IMAGE_HEIGHT = 1200;
 
 export function isIdentificationAvailable(): boolean {
   return !!process.env.CARDSIGHT_API_KEY;
@@ -24,8 +25,8 @@ export function isIdentificationAvailable(): boolean {
 async function compressImage(imageBuffer: Buffer): Promise<Buffer> {
   return sharp(imageBuffer)
     .rotate()
-    .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: "inside" })
-    .jpeg({ quality: 80 })
+    .resize(MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 90 })
     .toBuffer();
 }
 

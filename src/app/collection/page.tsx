@@ -26,8 +26,8 @@ function CollectionContent() {
     tag: searchParams.get("tag") ?? "",
     setName: searchParams.get("setName") ?? "",
     q: searchParams.get("q") ?? "",
-    sortBy: searchParams.get("sortBy") ?? "",
-    sortOrder: searchParams.get("sortOrder") ?? "asc",
+    sortBy: searchParams.get("sortBy") ?? "createdAt",
+    sortOrder: searchParams.get("sortOrder") ?? "desc",
   });
 
   const totalPages = Math.max(1, Math.ceil(totalCards / PAGE_SIZE));

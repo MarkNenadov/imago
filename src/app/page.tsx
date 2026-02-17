@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { Card } from "@/db/schema";
 
@@ -24,29 +25,28 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="mb-8 text-2xl font-bold text-gray-900">Dashboard</h1>
-
-      {/* Stats */}
-      {stats && (
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div className="rounded-lg bg-white p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Total Cards</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.totalCards}</p>
-          </div>
-          <div className="rounded-lg bg-white p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Images</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.totalImages}</p>
-          </div>
-          <div className="rounded-lg bg-white p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Players</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.distinctPlayers}</p>
-          </div>
-          <div className="rounded-lg bg-white p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Total Invested</p>
-            <p className="text-2xl font-bold text-gray-900">${stats.totalInvested.toFixed(2)}</p>
-          </div>
+      {/* Hero with inline stats */}
+      <div className="relative mb-8 h-48 overflow-hidden rounded-xl shadow-md sm:h-56">
+        <Image
+          src="/imago.png"
+          alt="Rickey Henderson stealing a base"
+          fill
+          priority
+          className="object-cover object-[center_25%]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-4">
+          <h1 className="mb-2 text-2xl font-bold text-white drop-shadow-lg">Imago</h1>
+          {stats && (
+            <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-white/90 drop-shadow">
+              <span><span className="font-semibold">{stats.totalCards}</span> cards</span>
+              <span><span className="font-semibold">{stats.totalImages}</span> images</span>
+              <span><span className="font-semibold">{stats.distinctPlayers}</span> players</span>
+              <span><span className="font-semibold">${stats.totalInvested.toFixed(2)}</span> invested</span>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Recent Cards */}
       <section>
