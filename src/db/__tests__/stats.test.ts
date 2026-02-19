@@ -21,6 +21,20 @@ describe("getCollectionStats", () => {
     expect(stats.byLocation).toEqual({});
   });
 
+  it("should derive decade from card year, not just tags", () => {
+    const db = freshDb();
+    createCard(db, { playerName: "Trout", sport: "baseball", year: 2020 });
+    createCard(db, { playerName: "Ripken", sport: "baseball", year: 1990 });
+    createCard(db, { playerName: "Ruth", sport: "baseball", year: 1930 });
+
+    const stats = getCollectionStats(db);
+
+    expect(stats.byDecade["2020s"]).toBe(1);
+    expect(stats.byDecade["1990s"]).toBe(1);
+    expect(stats.byDecade["1930s"]).toBe(1);
+    expect(stats.byDecade["Other"]).toBeUndefined();
+  });
+
   it("should calculate stats correctly", () => {
     const db = freshDb();
     createCard(db, { playerName: "Trout", sport: "baseball", purchasePrice: 25, location: "Box 1" });

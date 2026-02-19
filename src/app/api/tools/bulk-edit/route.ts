@@ -23,10 +23,10 @@ function cardIsMissingField(card: Card, fieldName: EditableField): boolean {
 }
 
 const EXCLUDED_POSITION_TAGS: Record<string, string[]> = {
-  batters: ["pitchers", "pitcher"],
-  batter: ["pitchers", "pitcher"],
-  pitchers: ["batters", "batter"],
-  pitcher: ["batters", "batter"],
+  batters: ["pitchers", "pitcher", "manager", "managers"],
+  batter: ["pitchers", "pitcher", "manager", "managers"],
+  pitchers: ["batters", "batter", "manager", "managers"],
+  pitcher: ["batters", "batter", "manager", "managers"],
 };
 
 function cardIsMissingTag(card: Card, tagName: string): boolean {

@@ -180,6 +180,7 @@ const BASEBALL_HOF_MEMBERS = new Set([
   "Kirby Puckett",
   "Old Hoss Radbourn",
   "Tim Raines",
+  "Rock Raines",
   "Pee Wee Reese",
   "Jim Rice",
   "Sam Rice",
@@ -270,5 +271,5 @@ export function isHallOfFamer(playerName: string): boolean {
 
 /** Normalize Jr/Sr in a player name to always include the period */
 export function normalizePlayerName(name: string): string {
-  return name.replace(/\b(Jr|Sr)\.?\b/g, "$1.").trim();
+  return name.replace(/\b(Jr|Sr)\.?/g, "$1.").trim();
 }

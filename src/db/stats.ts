@@ -67,10 +67,14 @@ export function getCollectionStats(db: DrizzleDb): CollectionStats {
     const tagList = (card.tags as string[]) ?? [];
     const tagSet = new Set(tagList.map((t) => t.toLowerCase()));
 
-    // Decade breakdown
-    const decadeTag = tagList.find((t) => /^\d{4}s$/.test(t));
-    const decadeLabel = decadeTag ?? "Other";
-    byDecade[decadeLabel] = (byDecade[decadeLabel] ?? 0) + 1;
+    // Decade breakdown (derived from card year)
+    if (card.year) {
+      const decadeStart = Math.floor(card.year / 10) * 10;
+      const decadeLabel = `${decadeStart}s`;
+      byDecade[decadeLabel] = (byDecade[decadeLabel] ?? 0) + 1;
+    } else {
+      byDecade["Other"] = (byDecade["Other"] ?? 0) + 1;
+    }
 
     // Rookie vs non-rookie
     if (tagSet.has("rc") || tagSet.has("rookie")) {
