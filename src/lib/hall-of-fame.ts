@@ -271,5 +271,5 @@ export function isHallOfFamer(playerName: string): boolean {
 
 /** Normalize Jr/Sr in a player name to always include the period */
 export function normalizePlayerName(name: string): string {
-  return name.replace(/\b(Jr|Sr)\.?/g, "$1.").trim();
+  return name.replace(/\b(Jr|Sr)\.*/g, "$1.").trim();
 }

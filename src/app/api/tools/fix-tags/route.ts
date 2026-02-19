@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { listCards, updateCard } from "@/db/cards";
-import { isHallOfFamer } from "@/lib/hall-of-fame";
+import { isHallOfFamer, normalizePlayerName } from "@/lib/hall-of-fame";
 
 interface TagFix {
   cardId: string;
   playerName: string;
   addedTag: string;
+}
+
+interface NameFix {
+  cardId: string;
+  oldName: string;
+  newName: string;
 }
 
 function getDecadeTag(year: number): string | null {
@@ -38,34 +44,50 @@ export async function GET() {
   const db = getDb();
   const allCards = listCards(db);
 
-  const fixes: TagFix[] = [];
+  const tagFixes: TagFix[] = [];
+  const nameFixes: NameFix[] = [];
   for (const card of allCards) {
+    const normalized = normalizePlayerName(card.playerName);
+    if (normalized !== card.playerName) {
+      nameFixes.push({ cardId: card.id, oldName: card.playerName, newName: normalized });
+    }
     const tags = (card.tags as string[]) ?? [];
-    const missing = findMissingTags(card.playerName, card.year, tags);
+    const missing = findMissingTags(normalized, card.year, tags);
     for (const tag of missing) {
-      fixes.push({ cardId: card.id, playerName: card.playerName, addedTag: tag });
+      tagFixes.push({ cardId: card.id, playerName: normalized, addedTag: tag });
     }
   }
 
-  return NextResponse.json({ fixes });
+  return NextResponse.json({ tagFixes, nameFixes });
 }
 
 export async function POST() {
   const db = getDb();
   const allCards = listCards(db);
 
-  const fixes: TagFix[] = [];
+  const tagFixes: TagFix[] = [];
+  const nameFixes: NameFix[] = [];
   for (const card of allCards) {
+    const normalized = normalizePlayerName(card.playerName);
+    if (normalized !== card.playerName) {
+      updateCard(db, card.id, { playerName: normalized });
+      nameFixes.push({ cardId: card.id, oldName: card.playerName, newName: normalized });
+    }
     const tags = (card.tags as string[]) ?? [];
-    const missing = findMissingTags(card.playerName, card.year, tags);
+    const missing = findMissingTags(normalized, card.year, tags);
     if (missing.length > 0) {
       const updatedTags = [...tags, ...missing];
       updateCard(db, card.id, { tags: updatedTags });
       for (const tag of missing) {
-        fixes.push({ cardId: card.id, playerName: card.playerName, addedTag: tag });
+        tagFixes.push({ cardId: card.id, playerName: normalized, addedTag: tag });
       }
     }
   }
 
-  return NextResponse.json({ fixed: fixes.length, fixes });
+  return NextResponse.json({
+    fixedNames: nameFixes.length,
+    fixedTags: tagFixes.length,
+    nameFixes,
+    tagFixes,
+  });
 }

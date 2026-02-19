@@ -239,17 +239,27 @@ interface TagFix {
   addedTag: string;
 }
 
+interface NameFix {
+  cardId: string;
+  oldName: string;
+  newName: string;
+}
+
 function TagCleanup() {
-  const [fixes, setFixes] = useState<TagFix[]>([]);
+  const [tagFixes, setTagFixes] = useState<TagFix[]>([]);
+  const [nameFixes, setNameFixes] = useState<NameFix[]>([]);
   const [scanned, setScanned] = useState(false);
   const [applied, setApplied] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const totalFixes = tagFixes.length + nameFixes.length;
 
   async function scan() {
     setLoading(true);
     const res = await fetch("/api/tools/fix-tags");
     const data = await res.json();
-    setFixes(data.fixes);
+    setTagFixes(data.tagFixes);
+    setNameFixes(data.nameFixes);
     setScanned(true);
     setLoading(false);
   }
@@ -258,7 +268,8 @@ function TagCleanup() {
     setLoading(true);
     const res = await fetch("/api/tools/fix-tags", { method: "POST" });
     const data = await res.json();
-    setFixes(data.fixes);
+    setTagFixes(data.tagFixes);
+    setNameFixes(data.nameFixes);
     setApplied(true);
     setLoading(false);
   }
@@ -282,13 +293,21 @@ function TagCleanup() {
 
       {scanned && !applied && (
         <>
-          {fixes.length === 0 ? (
-            <p className="text-sm text-green-600">All cards have correct tags.</p>
+          {totalFixes === 0 ? (
+            <p className="text-sm text-green-600">All cards have correct names and tags.</p>
           ) : (
             <>
               <div className="mb-4 max-h-48 space-y-1 overflow-y-auto">
-                {fixes.map((fix) => (
-                  <div key={`${fix.cardId}-${fix.addedTag}`} className="flex items-center gap-2 text-sm">
+                {nameFixes.map((fix) => (
+                  <div key={`name-${fix.cardId}`} className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-700">{fix.oldName}</span>
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+                      → {fix.newName}
+                    </span>
+                  </div>
+                ))}
+                {tagFixes.map((fix) => (
+                  <div key={`tag-${fix.cardId}-${fix.addedTag}`} className="flex items-center gap-2 text-sm">
                     <span className="text-gray-700">{fix.playerName}</span>
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
                       + {fix.addedTag}
@@ -301,7 +320,7 @@ function TagCleanup() {
                 disabled={loading}
                 className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50"
               >
-                {loading ? "Applying..." : `Fix ${fixes.length} Cards`}
+                {loading ? "Applying..." : `Fix ${totalFixes} Cards`}
               </button>
             </>
           )}
@@ -310,7 +329,7 @@ function TagCleanup() {
 
       {applied && (
         <p className="text-sm text-green-600">
-          Done! Added decade tags to {fixes.length} cards.
+          Done! Fixed {nameFixes.length} names and {tagFixes.length} tags.
         </p>
       )}
     </div>
