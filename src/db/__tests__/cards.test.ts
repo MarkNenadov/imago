@@ -7,6 +7,7 @@ import {
   updateCard,
   deleteCard,
   renameTag,
+  renameLocation,
 } from "@/db/cards";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 
@@ -193,6 +194,35 @@ describe("renameTag", () => {
     createCard(db, { ...sampleCard, tags: ["PC"] });
 
     const updated = renameTag(db, "nonexistent", "something");
+    expect(updated).toBe(0);
+  });
+});
+
+describe("renameLocation", () => {
+  it("should rename location on all matching cards", () => {
+    const db = freshDb();
+    createCard(db, { ...sampleCard, playerName: "Trout", location: "Box 1" });
+    createCard(db, { ...sampleCard, playerName: "Ohtani", location: "Box 1" });
+    createCard(db, { ...sampleCard, playerName: "Judge", location: "Box 2" });
+
+    const updated = renameLocation(db, "Box 1", "Binder A");
+    expect(updated).toBe(2);
+
+    const all = listCards(db);
+    const trout = all.find((c) => c.playerName === "Trout")!;
+    const ohtani = all.find((c) => c.playerName === "Ohtani")!;
+    const judge = all.find((c) => c.playerName === "Judge")!;
+
+    expect(trout.location).toBe("Binder A");
+    expect(ohtani.location).toBe("Binder A");
+    expect(judge.location).toBe("Box 2");
+  });
+
+  it("should return 0 when no cards match the source location", () => {
+    const db = freshDb();
+    createCard(db, { ...sampleCard, location: "Box 1" });
+
+    const updated = renameLocation(db, "Box 99", "Binder A");
     expect(updated).toBe(0);
   });
 });

@@ -135,6 +135,19 @@ export function renameTag(db: DrizzleDb, fromTag: string, toTag: string): number
   return updated;
 }
 
+export function renameLocation(db: DrizzleDb, fromLocation: string, toLocation: string): number {
+  const matching = db
+    .select()
+    .from(cards)
+    .where(eq(cards.location, fromLocation))
+    .all();
+
+  for (const card of matching) {
+    updateCard(db, card.id, { location: toLocation });
+  }
+  return matching.length;
+}
+
 export function updateCard(
   db: DrizzleDb,
   id: string,
