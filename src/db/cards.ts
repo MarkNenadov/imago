@@ -16,6 +16,7 @@ export function getCardById(db: DrizzleDb, id: string): Card | undefined {
 }
 
 interface ListFilters {
+  q?: string;
   sport?: string;
   location?: string;
   brand?: string;
@@ -43,6 +44,18 @@ export function listCardsPaginated(db: DrizzleDb, filters?: ListFilters): Pagina
   let countQuery = db.select({ count: sql<number>`count(*)` }).from(cards).$dynamic();
 
   const conditions: SQL[] = [];
+  if (filters?.q) {
+    const pattern = `%${filters.q}%`;
+    conditions.push(
+      or(
+        like(cards.playerName, pattern),
+        like(cards.team, pattern),
+        like(cards.brand, pattern),
+        like(cards.setName, pattern),
+        like(cards.notes, pattern),
+      )!,
+    );
+  }
   if (filters?.sport) conditions.push(eq(cards.sport, filters.sport));
   if (filters?.location) conditions.push(eq(cards.location, filters.location));
   if (filters?.brand) conditions.push(eq(cards.brand, filters.brand));

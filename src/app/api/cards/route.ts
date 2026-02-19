@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/db";
-import { createCard, listCards, listCardsPaginated, searchCards } from "@/db/cards";
+import { createCard, listCards, listCardsPaginated } from "@/db/cards";
 import { imageHashes } from "@/db/schema";
 import { isHallOfFamer, normalizePlayerName } from "@/lib/hall-of-fame";
 
@@ -8,13 +8,8 @@ export async function GET(request: NextRequest) {
   const db = getDb();
   const params = request.nextUrl.searchParams;
 
-  const query = params.get("q");
-  if (query) {
-    const results = searchCards(db, query);
-    return NextResponse.json(results);
-  }
-
   const filters = {
+    q: params.get("q") ?? undefined,
     sport: params.get("sport") ?? undefined,
     location: params.get("location") ?? undefined,
     brand: params.get("brand") ?? undefined,

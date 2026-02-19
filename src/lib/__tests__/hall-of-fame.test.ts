@@ -39,4 +39,16 @@ describe("isHallOfFamer", () => {
   it("should match alternate name Rock Raines for Tim Raines", () => {
     expect(isHallOfFamer("Rock Raines")).toBe(true);
   });
+
+  it("should match Alan Trammell", () => {
+    expect(isHallOfFamer("Alan Trammell")).toBe(true);
+  });
+
+  it("should match Minnie Miñoso with accent", () => {
+    expect(isHallOfFamer("Minnie Miñoso")).toBe(true);
+  });
+
+  it("should match Minnie Minoso without accent", () => {
+    expect(isHallOfFamer("Minnie Minoso")).toBe(true);
+  });
 });

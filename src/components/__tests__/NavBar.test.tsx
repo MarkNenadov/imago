@@ -10,7 +10,7 @@ describe("NavBar", () => {
     expect(screen.getByRole("link", { name: /collection/i })).toHaveAttribute("href", "/collection");
     expect(screen.getByRole("link", { name: /statistics/i })).toHaveAttribute("href", "/statistics");
     expect(screen.getByRole("link", { name: /tools/i })).toHaveAttribute("href", "/tools");
-    expect(screen.getByRole("link", { name: /add card/i })).toHaveAttribute("href", "/add");
+    expect(screen.getByRole("button", { name: /add card/i })).toBeInTheDocument();
   });
 
   it("should render the app name", () => {

@@ -143,6 +143,7 @@ const BASEBALL_HOF_MEMBERS = new Set([
   "Juan Marichal",
   "Rube Marquard",
   "Edgar Martinez",
+  "Minnie Miñoso",
   "Pedro Martinez",
   "Eddie Mathews",
   "Christy Mathewson",
@@ -226,6 +227,7 @@ const BASEBALL_HOF_MEMBERS = new Set([
   "Jim Thome",
   "Sam Thompson",
   "Joe Tinker",
+  "Alan Trammell",
   "Pie Traynor",
   "Dazzy Vance",
   "Arky Vaughan",
@@ -255,18 +257,22 @@ const BASEBALL_HOF_MEMBERS = new Set([
   "Robin Yount",
 ]);
 
-/** Strip periods from Jr/Sr suffixes for consistent matching */
-function normalizeSuffix(name: string): string {
-  return name.replace(/\b(Jr|Sr)\./gi, "$1").trim();
+/** Normalize a name for matching: strip Jr/Sr periods, remove diacritics */
+function normalizeName(name: string): string {
+  return name
+    .replace(/\b(Jr|Sr)\./gi, "$1")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
 }
 
-/** Normalized lookup set for case-insensitive, suffix-insensitive matching */
+/** Normalized lookup set for case-insensitive, suffix-insensitive, accent-insensitive matching */
 const NORMALIZED_HOF = new Set(
-  [...BASEBALL_HOF_MEMBERS].map((name) => normalizeSuffix(name).toLowerCase()),
+  [...BASEBALL_HOF_MEMBERS].map((name) => normalizeName(name).toLowerCase()),
 );
 
 export function isHallOfFamer(playerName: string): boolean {
-  return NORMALIZED_HOF.has(normalizeSuffix(playerName).trim().toLowerCase());
+  return NORMALIZED_HOF.has(normalizeName(playerName).trim().toLowerCase());
 }
 
 /** Normalize Jr/Sr in a player name to always include the period */

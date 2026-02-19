@@ -35,31 +35,22 @@ function CollectionContent() {
   const fetchCards = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
-    if (filters.q) {
-      params.set("q", filters.q);
-    } else {
-      params.set("limit", String(PAGE_SIZE));
-      params.set("offset", String((page - 1) * PAGE_SIZE));
-      if (filters.sport) params.set("sport", filters.sport);
-      if (filters.location) params.set("location", filters.location);
-      if (filters.brand) params.set("brand", filters.brand);
-      if (filters.team) params.set("team", filters.team);
-      if (filters.tag) params.set("tag", filters.tag);
-      if (filters.setName) params.set("setName", filters.setName);
-      if (filters.sortBy) params.set("sortBy", filters.sortBy);
-      if (filters.sortBy) params.set("sortOrder", filters.sortOrder);
-    }
+    params.set("limit", String(PAGE_SIZE));
+    params.set("offset", String((page - 1) * PAGE_SIZE));
+    if (filters.q) params.set("q", filters.q);
+    if (filters.sport) params.set("sport", filters.sport);
+    if (filters.location) params.set("location", filters.location);
+    if (filters.brand) params.set("brand", filters.brand);
+    if (filters.team) params.set("team", filters.team);
+    if (filters.tag) params.set("tag", filters.tag);
+    if (filters.setName) params.set("setName", filters.setName);
+    if (filters.sortBy) params.set("sortBy", filters.sortBy);
+    if (filters.sortBy) params.set("sortOrder", filters.sortOrder);
 
     const response = await fetch(`/api/cards?${params}`);
     const data = await response.json();
-
-    if (filters.q) {
-      setCards(data);
-      setTotalCards(data.length);
-    } else {
-      setCards(data.cards);
-      setTotalCards(data.total);
-    }
+    setCards(data.cards);
+    setTotalCards(data.total);
     setLoading(false);
   }, [filters, page]);
 

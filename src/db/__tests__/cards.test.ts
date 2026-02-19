@@ -6,7 +6,6 @@ import {
   listCards,
   updateCard,
   deleteCard,
-  searchCards,
 } from "@/db/cards";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 
@@ -114,13 +113,13 @@ describe("listCards", () => {
   });
 });
 
-describe("searchCards", () => {
+describe("listCards with q (text search)", () => {
   it("should search by player name", () => {
     const db = freshDb();
     createCard(db, sampleCard);
     createCard(db, { ...sampleCard, playerName: "Shohei Ohtani" });
 
-    const results = searchCards(db, "trout");
+    const results = listCards(db, { q: "trout" });
     expect(results).toHaveLength(1);
     expect(results[0].playerName).toBe("Mike Trout");
   });
@@ -129,8 +128,19 @@ describe("searchCards", () => {
     const db = freshDb();
     createCard(db, { ...sampleCard, notes: "great card from LCS" });
 
-    const results = searchCards(db, "LCS");
+    const results = listCards(db, { q: "LCS" });
     expect(results).toHaveLength(1);
+  });
+
+  it("should combine text search with tag filter", () => {
+    const db = freshDb();
+    createCard(db, { ...sampleCard, playerName: "Mike Trout", tags: ["PC", "rookie"] });
+    createCard(db, { ...sampleCard, playerName: "Mike Schmidt", tags: ["HOF"] });
+    createCard(db, { ...sampleCard, playerName: "Shohei Ohtani", tags: ["PC"] });
+
+    const results = listCards(db, { q: "Mike", tag: "PC" });
+    expect(results).toHaveLength(1);
+    expect(results[0].playerName).toBe("Mike Trout");
   });
 });
 
