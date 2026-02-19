@@ -862,6 +862,113 @@ function BulkEdit() {
   );
 }
 
+function TagRename() {
+  const [fromTag, setFromTag] = useState("");
+  const [toTag, setToTag] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ updated: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleRename() {
+    if (!fromTag.trim() || !toTag.trim()) return;
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const res = await fetch("/api/tools/rename-tag", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fromTag: fromTag.trim(), toTag: toTag.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Rename failed");
+      setResult(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Rename failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function reset() {
+    setFromTag("");
+    setToTag("");
+    setResult(null);
+    setError(null);
+  }
+
+  return (
+    <div className="rounded-lg bg-white p-6 shadow-sm">
+      <h2 className="mb-1 text-lg font-semibold text-gray-900">Rename Tag</h2>
+      <p className="mb-4 text-sm text-gray-500">
+        Replace one tag with another across all cards that have it.
+      </p>
+
+      {!result && (
+        <>
+          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="fromTag" className="block text-sm font-medium text-gray-700">
+                From
+              </label>
+              <input
+                id="fromTag"
+                type="text"
+                value={fromTag}
+                onChange={(e) => setFromTag(e.target.value)}
+                placeholder="e.g., first basemen"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+            <div>
+              <label htmlFor="toTag" className="block text-sm font-medium text-gray-700">
+                To
+              </label>
+              <input
+                id="toTag"
+                type="text"
+                value={toTag}
+                onChange={(e) => setToTag(e.target.value)}
+                placeholder="e.g., 1b"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+          </div>
+
+          {error && (
+            <p className="mb-3 text-sm text-red-600">{error}</p>
+          )}
+
+          <button
+            onClick={handleRename}
+            disabled={loading || !fromTag.trim() || !toTag.trim() || fromTag.trim() === toTag.trim()}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50"
+          >
+            {loading ? "Renaming..." : "Rename Tag"}
+          </button>
+        </>
+      )}
+
+      {result && (
+        <div className="space-y-3">
+          <p className="text-sm text-green-600">
+            {result.updated === 0
+              ? `No cards found with tag "${fromTag.trim()}".`
+              : `Renamed "${fromTag.trim()}" to "${toTag.trim()}" on ${result.updated} card${result.updated !== 1 ? "s" : ""}.`}
+          </p>
+          <button
+            onClick={reset}
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Do Another
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface IncompleteCard {
   id: string;
   playerName: string;
@@ -1072,6 +1179,7 @@ export default function ToolsPage() {
         {activeTab === "bulk" && (
           <>
             <BulkEdit />
+            <TagRename />
             {/* TODO: Remove once backfill is done */}
             <QuickBackfill />
           </>

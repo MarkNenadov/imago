@@ -6,6 +6,7 @@ import {
   listCards,
   updateCard,
   deleteCard,
+  renameTag,
 } from "@/db/cards";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 
@@ -153,6 +154,46 @@ describe("updateCard", () => {
     expect(updated!.location).toBe("Box 5");
     expect(updated!.purchasePrice).toBe(30);
     expect(updated!.playerName).toBe("Mike Trout");
+  });
+});
+
+describe("renameTag", () => {
+  it("should rename a tag on all cards that have it", () => {
+    const db = freshDb();
+    createCard(db, { ...sampleCard, playerName: "Trout", tags: ["first basemen", "PC"] });
+    createCard(db, { ...sampleCard, playerName: "Ohtani", tags: ["first basemen"] });
+    createCard(db, { ...sampleCard, playerName: "Judge", tags: ["PC"] });
+
+    const updated = renameTag(db, "first basemen", "1b");
+    expect(updated).toBe(2);
+
+    const all = listCards(db);
+    const trout = all.find((c) => c.playerName === "Trout")!;
+    const ohtani = all.find((c) => c.playerName === "Ohtani")!;
+    const judge = all.find((c) => c.playerName === "Judge")!;
+
+    expect(trout.tags).toEqual(["PC", "1b"]);
+    expect(ohtani.tags).toEqual(["1b"]);
+    expect(judge.tags).toEqual(["PC"]);
+  });
+
+  it("should not duplicate if card already has the target tag", () => {
+    const db = freshDb();
+    createCard(db, { ...sampleCard, tags: ["old-tag", "new-tag"] });
+
+    const updated = renameTag(db, "old-tag", "new-tag");
+    expect(updated).toBe(1);
+
+    const all = listCards(db);
+    expect(all[0].tags).toEqual(["new-tag"]);
+  });
+
+  it("should return 0 when no cards have the source tag", () => {
+    const db = freshDb();
+    createCard(db, { ...sampleCard, tags: ["PC"] });
+
+    const updated = renameTag(db, "nonexistent", "something");
+    expect(updated).toBe(0);
   });
 });
 

@@ -117,6 +117,24 @@ export function searchCards(db: DrizzleDb, query: string): Card[] {
     .all();
 }
 
+export function renameTag(db: DrizzleDb, fromTag: string, toTag: string): number {
+  const matching = db
+    .select()
+    .from(cards)
+    .where(like(cards.tags, `%"${fromTag}"%`))
+    .all();
+
+  let updated = 0;
+  for (const card of matching) {
+    const tags = (card.tags as string[]) ?? [];
+    const withoutOld = tags.filter((t) => t !== fromTag);
+    const withNew = withoutOld.includes(toTag) ? withoutOld : [...withoutOld, toTag];
+    updateCard(db, card.id, { tags: withNew });
+    updated++;
+  }
+  return updated;
+}
+
 export function updateCard(
   db: DrizzleDb,
   id: string,
