@@ -10,7 +10,6 @@ interface IncompleteCard {
 
 const IMPORTANT_FIELDS = [
   { key: "purchasePrice", label: "Price" },
-  { key: "condition", label: "Condition" },
   { key: "purchaseDate", label: "Purchase Date" },
   { key: "team", label: "Team" },
   { key: "imageFront", label: "Front Image" },
