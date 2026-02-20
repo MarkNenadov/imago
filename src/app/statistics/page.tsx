@@ -7,6 +7,8 @@ interface Stats {
   totalImages: number;
   distinctPlayers: number;
   totalInvested: number;
+  imageStorageMb: number;
+  bySport: Record<string, number>;
   byTeam: Record<string, number>;
   byYear: Record<string, number>;
   byBrand: Record<string, number>;
@@ -110,7 +112,7 @@ export default function StatisticsPage() {
     <div>
       <h1 className="mb-6 text-2xl font-bold text-gray-900">Statistics</h1>
 
-      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
         <div className="rounded-lg bg-white p-4 shadow-sm">
           <p className="text-sm text-gray-500">Total Cards</p>
           <p className="text-2xl font-bold text-gray-900">{stats.totalCards}</p>
@@ -127,9 +129,16 @@ export default function StatisticsPage() {
           <p className="text-sm text-gray-500">Total Invested</p>
           <p className="text-2xl font-bold text-gray-900">${stats.totalInvested.toFixed(2)}</p>
         </div>
+        <div className="rounded-lg bg-white p-4 shadow-sm">
+          <p className="text-sm text-gray-500">Photo Storage</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.imageStorageMb.toFixed(1)} MB</p>
+        </div>
       </div>
 
       <div className="space-y-8">
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <BarChart data={stats.bySport} label="Sport" />
+        </div>
         <div className="rounded-lg bg-white p-6 shadow-sm">
           <CollapsibleBarChart data={stats.byTeam} label="Team" previewCount={10} />
         </div>
