@@ -1345,8 +1345,8 @@ function PhotoQualityScanner() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {flagged.map((card, i) => (
-                    <tr key={`${card.cardId}-${card.imageType}-${i}`} className="py-2">
+                  {flagged.map((card) => (
+                    <tr key={`${card.cardId}-${card.imageType}`} className="py-2">
                       <td className="py-2 pr-4">
                         <Link
                           href={`/collection/${card.cardId}`}
@@ -1466,9 +1466,7 @@ export default function ToolsPage() {
         )}
 
         {activeTab === "experimental" && (
-          <>
-            <PhotoQualityScanner />
-          </>
+          <PhotoQualityScanner />
         )}
       </div>
     </div>
