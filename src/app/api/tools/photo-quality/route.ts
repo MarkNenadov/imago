@@ -17,7 +17,7 @@ export interface FlaggedCard {
   scores: { blur: number; noise: number; background: number };
 }
 
-interface PhotoQualityResponse {
+export interface PhotoQualityResponse {
   total: number;
   flagged: FlaggedCard[];
 }
@@ -33,11 +33,11 @@ const LAPLACIAN_KERNEL = {
   kernel: [0, 1, 0, 1, -4, 1, 0, 1, 0],
 };
 
-async function analyzeImage(
-  imagePath: string,
-): Promise<FlaggedCard["scores"] & { issues: FlaggedCard["issues"] }> {
-  const absolutePath = path.join(process.cwd(), "public", imagePath);
+const BATCH_SIZE = 8;
 
+async function analyzeImage(
+  absolutePath: string,
+): Promise<FlaggedCard["scores"] & { issues: FlaggedCard["issues"] }> {
   const baseImage = sharp(absolutePath).greyscale();
 
   // Blur: apply Laplacian, measure output stdev.
@@ -122,38 +122,68 @@ export async function GET() {
   const db = getDb();
   const allCards = listCards(db);
 
-  const flagged: FlaggedCard[] = [];
-  let total = 0;
+  // Collect all image tasks
+  const imageTasks: Array<{
+    absolutePath: string;
+    card: (typeof allCards)[0];
+    type: "front" | "back";
+  }> = [];
 
   for (const card of allCards) {
-    const imagesToCheck: Array<{ path: string; type: "front" | "back" }> = [];
-
-    if (card.imageFront) imagesToCheck.push({ path: card.imageFront, type: "front" });
-    if (card.imageBack) imagesToCheck.push({ path: card.imageBack, type: "back" });
-
-    for (const { path: imagePath, type } of imagesToCheck) {
-      const absolutePath = path.join(process.cwd(), "public", imagePath);
-      if (!fs.existsSync(absolutePath)) continue;
-
-      total++;
-
-      try {
-        const { issues, ...scores } = await analyzeImage(imagePath);
-        if (issues.length > 0) {
-          flagged.push({
-            cardId: card.id,
-            playerName: card.playerName,
-            year: card.year ?? null,
-            brand: card.brand ?? null,
-            imageType: type,
-            issues,
-            scores,
-          });
-        }
-      } catch (err) {
-        console.error(`photo-quality: skipping ${imagePath}:`, err);
-      }
+    if (card.imageFront) {
+      const p = path.join(process.cwd(), "public", card.imageFront);
+      imageTasks.push({ absolutePath: p, card, type: "front" });
     }
+    if (card.imageBack) {
+      const p = path.join(process.cwd(), "public", card.imageBack);
+      imageTasks.push({ absolutePath: p, card, type: "back" });
+    }
+  }
+
+  // Filter to only existing files (async, no event loop blocking)
+  const existingTasks = (
+    await Promise.all(
+      imageTasks.map(async (task) => {
+        try {
+          await fs.promises.access(task.absolutePath);
+          return task;
+        } catch {
+          return null;
+        }
+      }),
+    )
+  ).filter((t): t is NonNullable<typeof t> => t !== null);
+
+  const total = existingTasks.length;
+
+  // Process in batches to avoid overwhelming Sharp
+  const flagged: FlaggedCard[] = [];
+
+  for (let i = 0; i < existingTasks.length; i += BATCH_SIZE) {
+    const batch = existingTasks.slice(i, i + BATCH_SIZE);
+    const results = await Promise.all(
+      batch.map(async ({ absolutePath, card, type }) => {
+        try {
+          const { issues, ...scores } = await analyzeImage(absolutePath);
+          if (issues.length > 0) {
+            return {
+              cardId: card.id,
+              playerName: card.playerName,
+              year: card.year ?? null,
+              brand: card.brand ?? null,
+              imageType: type,
+              issues,
+              scores,
+            } satisfies FlaggedCard;
+          }
+          return null;
+        } catch (err) {
+          console.error(`photo-quality: skipping ${absolutePath}:`, err);
+          return null;
+        }
+      }),
+    );
+    flagged.push(...results.filter((r): r is FlaggedCard => r !== null));
   }
 
   return NextResponse.json({ total, flagged } satisfies PhotoQualityResponse);
