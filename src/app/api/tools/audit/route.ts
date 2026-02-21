@@ -12,6 +12,7 @@ const IMPORTANT_FIELDS = [
   { key: "purchasePrice", label: "Price" },
   { key: "purchaseDate", label: "Purchase Date" },
   { key: "team", label: "Team" },
+  { key: "location", label: "Location" },
   { key: "imageFront", label: "Front Image" },
 ] as const;
 

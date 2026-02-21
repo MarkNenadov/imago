@@ -1125,7 +1125,7 @@ function DataAudit() {
     <div className="rounded-lg bg-white p-6 shadow-sm">
       <h2 className="mb-1 text-lg font-semibold text-gray-900">Data Audit</h2>
       <p className="mb-4 text-sm text-gray-500">
-        Find cards missing important fields: price, purchase date, team, front image, or position tag (batter/pitcher/manager).
+        Find cards missing important fields: price, purchase date, team, location, front image, or position tag (batter/pitcher/manager).
       </p>
 
       {!scanned && (
