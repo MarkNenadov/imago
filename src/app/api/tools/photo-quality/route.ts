@@ -27,8 +27,8 @@ export interface PhotoQualityResponse {
 // noiseScore: residualStdev/75 * 100 — higher threshold = fewer noise flags
 // backgroundScore: composite uniformity 0–100 — higher threshold = fewer background flags
 const BLUR_FLAG_THRESHOLD = 4;
-const NOISE_FLAG_THRESHOLD = 30;
-const BACKGROUND_FLAG_THRESHOLD = 30;
+const NOISE_FLAG_THRESHOLD = 62;
+const BACKGROUND_FLAG_THRESHOLD = 62;
 
 // Laplacian kernel for edge detection. Low output variance = blurry image.
 const LAPLACIAN_KERNEL = {
