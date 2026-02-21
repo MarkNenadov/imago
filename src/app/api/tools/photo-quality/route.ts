@@ -23,12 +23,12 @@ export interface PhotoQualityResponse {
 }
 
 // Calibration: adjust these to tune sensitivity.
-// blurScore: Laplacian stdev ~15 = blurry threshold (stdev clamped to 100 scale)
-// noiseScore: residualStdev ~53 maps to score 70 with the /75 scale
-// backgroundScore: composite uniformity score, 0–100
-const BLUR_FLAG_THRESHOLD = 15;
-const NOISE_FLAG_THRESHOLD = 70;
-const BACKGROUND_FLAG_THRESHOLD = 60;
+// blurScore: Laplacian stdev clamped to 100 — lower threshold = fewer blur flags
+// noiseScore: residualStdev/75 * 100 — higher threshold = fewer noise flags
+// backgroundScore: composite uniformity 0–100 — higher threshold = fewer background flags
+const BLUR_FLAG_THRESHOLD = 8;
+const NOISE_FLAG_THRESHOLD = 86;
+const BACKGROUND_FLAG_THRESHOLD = 82;
 
 // Laplacian kernel for edge detection. Low output variance = blurry image.
 const LAPLACIAN_KERNEL = {
