@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import type { Card } from "@/db/schema";
 import { groupDuplicateCards, type DuplicateGroup } from "@/lib/duplicates";
+import type { FlaggedCard, PhotoQualityResponse } from "@/app/api/tools/photo-quality/route";
 
 type LotStep = "select" | "generating" | "results";
 
@@ -1259,17 +1260,7 @@ function QuickBackfill() {
   );
 }
 
-type QualityIssue = "blur" | "noise" | "background";
-
-interface FlaggedCard {
-  cardId: string;
-  playerName: string;
-  year: number | null;
-  brand: string | null;
-  imageType: "front" | "back";
-  issues: QualityIssue[];
-  scores: { blur: number; noise: number; background: number };
-}
+type QualityIssue = FlaggedCard["issues"][number];
 
 const ISSUE_LABELS: Record<QualityIssue, { label: string; color: string }> = {
   blur: { label: "Blurry", color: "bg-purple-50 text-purple-600" },
@@ -1290,9 +1281,9 @@ function PhotoQualityScanner() {
     try {
       const res = await fetch("/api/tools/photo-quality");
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
-      const data = await res.json();
-      setTotal(data.total);
-      setFlagged(data.flagged);
+      const data = await res.json() as PhotoQualityResponse;
+      setTotal(data.total ?? 0);
+      setFlagged(data.flagged ?? []);
       setScanned(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Scan failed");

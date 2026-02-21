@@ -22,6 +22,10 @@ export interface PhotoQualityResponse {
   flagged: FlaggedCard[];
 }
 
+// Calibration: adjust these to tune sensitivity.
+// blurScore: Laplacian stdev ~15 = blurry threshold (stdev clamped to 100 scale)
+// noiseScore: residualStdev ~53 maps to score 70 with the /75 scale
+// backgroundScore: composite uniformity score, 0–100
 const BLUR_FLAG_THRESHOLD = 15;
 const NOISE_FLAG_THRESHOLD = 70;
 const BACKGROUND_FLAG_THRESHOLD = 60;
