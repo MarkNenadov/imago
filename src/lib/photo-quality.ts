@@ -1,6 +1,8 @@
 export interface ChannelStats {
   mean: number;
   stdev: number;
+  // min and max are included to match Sharp's channel stats shape for structural
+  // compatibility; current scoring functions do not use them.
   min: number;
   max: number;
 }
@@ -11,8 +13,8 @@ export interface ChannelStats {
  * Input: stats of the image after applying a Laplacian convolution kernel.
  */
 export function blurScore(laplacianStats: ChannelStats): number {
-  // Cap stdev at 100 for scoring purposes, then scale to 0-100.
-  return Math.min(100, Math.round((laplacianStats.stdev / 100) * 100));
+  // Score = stdev clamped to 100.
+  return Math.min(100, Math.round(laplacianStats.stdev));
 }
 
 /**
@@ -21,8 +23,8 @@ export function blurScore(laplacianStats: ChannelStats): number {
  * Input: residualStdev = original.stdev - blurred.stdev (per-channel average).
  */
 export function noiseScore(residualStdev: number): number {
-  // Map residualStdev 0–75 to score 0–100.
-  return Math.min(100, Math.round((residualStdev / 75) * 100));
+  // Map residualStdev 0–75 to score 0–100; clamp to [0, 100].
+  return Math.max(0, Math.min(100, Math.round((residualStdev / 75) * 100)));
 }
 
 /**
@@ -31,7 +33,9 @@ export function noiseScore(residualStdev: number): number {
  * Scale: 0 (varied corners, card fills frame) to 100 (all corners identical).
  * Input: array of exactly 4 ChannelStats, one per corner patch (grayscale mean).
  */
-export function backgroundScore(corners: ChannelStats[]): number {
+export function backgroundScore(
+  corners: [ChannelStats, ChannelStats, ChannelStats, ChannelStats],
+): number {
   const means = corners.map((c) => c.mean);
   const avg = means.reduce((a, b) => a + b, 0) / means.length;
   const variance =

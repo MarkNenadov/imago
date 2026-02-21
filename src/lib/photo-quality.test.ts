@@ -30,14 +30,14 @@ describe("noiseScore", () => {
   });
 
   it("returns high score for grainy image (high residual stdev)", () => {
-    expect(noiseScore(55)).toBeGreaterThan(70);
+    expect(noiseScore(65)).toBeGreaterThan(70);
   });
 });
 
 describe("backgroundScore", () => {
   it("returns high score when all corners are uniform (pure background)", () => {
     // All four corner patches have nearly identical mean color — uniform background.
-    const corners: ChannelStats[] = [
+    const corners: [ChannelStats, ChannelStats, ChannelStats, ChannelStats] = [
       { mean: 240, stdev: 2, min: 235, max: 245 },
       { mean: 238, stdev: 2, min: 233, max: 243 },
       { mean: 241, stdev: 2, min: 236, max: 246 },
@@ -48,7 +48,7 @@ describe("backgroundScore", () => {
 
   it("returns low score when corners have varied content", () => {
     // Corners differ from each other — card fills the frame.
-    const corners: ChannelStats[] = [
+    const corners: [ChannelStats, ChannelStats, ChannelStats, ChannelStats] = [
       { mean: 240, stdev: 40, min: 100, max: 255 },
       { mean: 80,  stdev: 35, min: 20,  max: 200 },
       { mean: 160, stdev: 50, min: 30,  max: 255 },
