@@ -1259,12 +1259,142 @@ function QuickBackfill() {
   );
 }
 
-type ToolsTab = "audit" | "bulk" | "export";
+type QualityIssue = "blur" | "noise" | "background";
+
+interface FlaggedCard {
+  cardId: string;
+  playerName: string;
+  year: number | null;
+  brand: string | null;
+  imageType: "front" | "back";
+  issues: QualityIssue[];
+  scores: { blur: number; noise: number; background: number };
+}
+
+const ISSUE_LABELS: Record<QualityIssue, { label: string; color: string }> = {
+  blur: { label: "Blurry", color: "bg-purple-50 text-purple-600" },
+  noise: { label: "Noisy", color: "bg-orange-50 text-orange-600" },
+  background: { label: "Background", color: "bg-yellow-50 text-yellow-600" },
+};
+
+function PhotoQualityScanner() {
+  const [scanned, setScanned] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
+  const [flagged, setFlagged] = useState<FlaggedCard[]>([]);
+
+  async function scan() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/tools/photo-quality");
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const data = await res.json();
+      setTotal(data.total);
+      setFlagged(data.flagged);
+      setScanned(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Scan failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="rounded-lg bg-white p-6 shadow-sm">
+      <h2 className="mb-1 text-lg font-semibold text-gray-900">
+        Photo Quality Scanner
+      </h2>
+      <p className="mb-4 text-sm text-gray-500">
+        Analyzes card photos for quality issues: blur/focus, grain/noise, and
+        excessive background. Both front and back images are checked.
+      </p>
+
+      {!scanned && (
+        <button
+          onClick={scan}
+          disabled={loading}
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50"
+        >
+          {loading ? "Scanning..." : "Scan Photos"}
+        </button>
+      )}
+
+      {error && (
+        <p className="mt-2 text-sm text-red-600">{error}</p>
+      )}
+
+      {scanned && (
+        <>
+          <p className="mb-4 text-sm text-gray-600">
+            {flagged.length === 0
+              ? `All ${total} photos look good!`
+              : `${flagged.length} of ${total} photos flagged for quality issues.`}
+          </p>
+
+          {flagged.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 text-left text-xs text-gray-500">
+                    <th className="pb-2 font-medium">Card</th>
+                    <th className="pb-2 font-medium">Image</th>
+                    <th className="pb-2 font-medium">Issues</th>
+                    <th className="pb-2 font-medium">Scores</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {flagged.map((card, i) => (
+                    <tr key={`${card.cardId}-${card.imageType}-${i}`} className="py-2">
+                      <td className="py-2 pr-4">
+                        <Link
+                          href={`/collection/${card.cardId}`}
+                          className="font-medium text-blue-600 hover:underline"
+                        >
+                          {card.playerName}
+                        </Link>
+                        <div className="text-xs text-gray-400">
+                          {[card.year, card.brand].filter(Boolean).join(" ")}
+                        </div>
+                      </td>
+                      <td className="py-2 pr-4 capitalize text-gray-600">
+                        {card.imageType}
+                      </td>
+                      <td className="py-2 pr-4">
+                        <div className="flex flex-wrap gap-1">
+                          {card.issues.map((issue) => (
+                            <span
+                              key={issue}
+                              className={`rounded-full px-2 py-0.5 text-xs ${ISSUE_LABELS[issue].color}`}
+                            >
+                              {ISSUE_LABELS[issue].label}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-2 text-xs text-gray-400">
+                        blur: {card.scores.blur} · noise: {card.scores.noise} · bg: {card.scores.background}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+type ToolsTab = "audit" | "bulk" | "export" | "experimental";
 
 const TABS: { key: ToolsTab; label: string }[] = [
   { key: "audit", label: "Audit & Cleanup" },
   { key: "bulk", label: "Bulk Operations" },
   { key: "export", label: "Export & Listings" },
+  { key: "experimental", label: "Experimental" },
 ];
 
 export default function ToolsPage() {
@@ -1332,6 +1462,12 @@ export default function ToolsPage() {
               </a>
             </div>
             <LotBuilder cards={cards} />
+          </>
+        )}
+
+        {activeTab === "experimental" && (
+          <>
+            <PhotoQualityScanner />
           </>
         )}
       </div>
