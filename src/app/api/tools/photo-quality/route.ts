@@ -26,7 +26,7 @@ export interface PhotoQualityResponse {
 // blurScore: Laplacian stdev clamped to 100 — lower threshold = fewer blur flags
 // noiseScore: residualStdev/75 * 100 — higher threshold = fewer noise flags
 // backgroundScore: composite uniformity 0–100 — higher threshold = fewer background flags
-const BLUR_FLAG_THRESHOLD = 8;
+const BLUR_FLAG_THRESHOLD = 4;
 const NOISE_FLAG_THRESHOLD = 86;
 const BACKGROUND_FLAG_THRESHOLD = 82;
 
