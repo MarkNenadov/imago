@@ -39,4 +39,20 @@ export const imageHashes = sqliteTable("image_hashes", {
     .default(sql`(datetime('now'))`),
 });
 
+export const wishlistItems = sqliteTable("wishlist_items", {
+  id: text("id").primaryKey(),
+  playerName: text("player_name").notNull(),
+  year: integer("year"),
+  brand: text("brand"),
+  setName: text("set_name"),
+  cardNumber: text("card_number"),
+  variant: text("variant"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export type WishlistItem = typeof wishlistItems.$inferSelect;
+export type NewWishlistItem = typeof wishlistItems.$inferInsert;
+
 export { referenceCards } from "./reference-schema";
