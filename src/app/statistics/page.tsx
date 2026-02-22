@@ -1,6 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
+
+interface ExpensiveCard {
+  id: string;
+  playerName: string;
+  year: number | null;
+  brand: string | null;
+  purchasePrice: number;
+}
 
 interface Stats {
   totalCards: number;
@@ -8,6 +17,7 @@ interface Stats {
   distinctPlayers: number;
   totalInvested: number;
   imageStorageMb: number;
+  topExpensive: ExpensiveCard[];
   bySport: Record<string, number>;
   byTeam: Record<string, number>;
   byYear: Record<string, number>;
@@ -163,6 +173,24 @@ export default function StatisticsPage() {
         <div className="rounded-lg bg-white p-6 shadow-sm">
           <BarChart data={stats.hofVsNon} label="Hall of Fame Status" />
         </div>
+        {stats.topExpensive.length > 0 && (
+          <div className="rounded-lg bg-white p-6 shadow-sm">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700">Top 5 Most Expensive</h3>
+            <div className="space-y-2">
+              {stats.topExpensive.map((card) => (
+                <div key={card.id} className="flex items-center justify-between text-sm">
+                  <Link href={`/collection/${card.id}`} className="font-medium text-blue-600 hover:underline">
+                    {card.playerName}
+                  </Link>
+                  <span className="text-gray-400">
+                    {[card.year, card.brand].filter(Boolean).join(" ")}
+                  </span>
+                  <span className="font-semibold text-gray-900">${card.purchasePrice.toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
