@@ -1,61 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { join } from "path";
-import { writeFile, readFile } from "fs/promises";
-import sharp from "sharp";
-import { v4 as uuid } from "uuid";
+import { readFile } from "fs/promises";
+import { createGrid } from "sharp-image-grid";
 import { getDb } from "@/db";
 import { getCardById } from "@/db/cards";
 import type { Card } from "@/db/schema";
 
-const COLS = 2;
-const ROWS = 3;
-const CARDS_PER_IMAGE = COLS * ROWS;
-const CELL_WIDTH = 400;
-const CELL_HEIGHT = 560;
-const GAP = 12;
-const CANVAS_WIDTH = COLS * CELL_WIDTH + (COLS + 1) * GAP;
-const CANVAS_HEIGHT = ROWS * CELL_HEIGHT + (ROWS + 1) * GAP;
-
 async function loadCardImage(imagePath: string): Promise<Buffer> {
-  const filePath = join(process.cwd(), "public", imagePath);
-  return readFile(filePath);
-}
-
-async function createComposite(imageBuffers: Buffer[]): Promise<Buffer> {
-  const composites = await Promise.all(
-    imageBuffers.map(async (buf, i) => {
-      const col = i % COLS;
-      const row = Math.floor(i / COLS);
-      const resized = await sharp(buf)
-        .resize(CELL_WIDTH, CELL_HEIGHT, { fit: "contain", background: { r: 245, g: 245, b: 245 } })
-        .toBuffer();
-      return {
-        input: resized,
-        left: GAP + col * (CELL_WIDTH + GAP),
-        top: GAP + row * (CELL_HEIGHT + GAP),
-      };
-    }),
-  );
-
-  return sharp({
-    create: {
-      width: CANVAS_WIDTH,
-      height: CANVAS_HEIGHT,
-      channels: 3,
-      background: { r: 255, g: 255, b: 255 },
-    },
-  })
-    .composite(composites)
-    .jpeg({ quality: 90 })
-    .toBuffer();
-}
-
-function chunk<T>(arr: T[], size: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) {
-    result.push(arr.slice(i, i + size));
-  }
-  return result;
+  return readFile(join(process.cwd(), "public", imagePath));
 }
 
 export async function POST(request: NextRequest) {
@@ -81,16 +33,21 @@ export async function POST(request: NextRequest) {
     selectedCards.map((c) => loadCardImage(c.imageFront!)),
   );
 
-  const chunks = chunk(imageBuffers, CARDS_PER_IMAGE);
-  const outputPaths: string[] = [];
-
-  for (const group of chunks) {
-    const composite = await createComposite(group);
-    const filename = `lot-${uuid()}.jpg`;
-    const outputPath = join(process.cwd(), "public", "uploads", filename);
-    await writeFile(outputPath, composite);
-    outputPaths.push(`/uploads/${filename}`);
+  const CARDS_PER_IMAGE = 6;
+  const chunks: Buffer[][] = [];
+  for (let i = 0; i < imageBuffers.length; i += CARDS_PER_IMAGE) {
+    chunks.push(imageBuffers.slice(i, i + CARDS_PER_IMAGE));
   }
 
-  return NextResponse.json({ images: outputPaths });
+  const compositeBuffers = await Promise.all(
+    chunks.map((chunk) =>
+      createGrid(chunk, { cols: 2, cellWidth: 400, cellHeight: 560, gap: 12 }),
+    ),
+  );
+
+  const base64Images = compositeBuffers.map((buf) =>
+    `data:image/jpeg;base64,${buf.toString("base64")}`,
+  );
+
+  return NextResponse.json({ images: base64Images });
 }
