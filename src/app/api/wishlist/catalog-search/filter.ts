@@ -13,8 +13,8 @@ function isMatch(
   b: CatalogCard,
 ): boolean {
   if (a.playerName.toLowerCase() !== b.playerName.toLowerCase()) return false;
-  if (b.year && a.year && a.year !== b.year) return false;
-  if (b.cardNumber && a.cardNumber && a.cardNumber !== b.cardNumber) return false;
+  if (b.year != null && a.year != null && a.year !== b.year) return false;
+  if (b.cardNumber != null && b.cardNumber !== "" && a.cardNumber != null && a.cardNumber !== b.cardNumber) return false;
   return true;
 }
 

@@ -55,7 +55,10 @@ describe("listWishlistItems", () => {
     expect(items).toHaveLength(3);
     expect(items[0].playerName).toBe("Rickey Henderson");
     expect(items[0].year).toBe(1984);
+    expect(items[1].playerName).toBe("Rickey Henderson");
+    expect(items[1].year).toBe(1986);
     expect(items[2].playerName).toBe("Wade Boggs");
+    expect(items[2].year).toBe(1983);
   });
 });
 

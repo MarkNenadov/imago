@@ -151,7 +151,7 @@ export function FillGapsPanel({ onItemsAdded }: Props) {
           <div className="max-h-64 overflow-y-auto space-y-1">
             {results.map((card, i) => (
               <label
-                key={i}
+                key={`${card.playerName}-${card.year ?? ""}-${card.cardNumber ?? ""}-${i}`}
                 className="flex cursor-pointer items-center gap-3 rounded px-2 py-1.5 hover:bg-white"
               >
                 <input

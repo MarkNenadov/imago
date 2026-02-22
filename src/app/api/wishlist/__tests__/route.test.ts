@@ -37,6 +37,9 @@ describe("POST /api/wishlist behavior — bulk insert", () => {
   });
 });
 
+// Note: playerName validation (non-empty, non-whitespace) is enforced in route.ts
+// before calling createWishlistItem. SQLite NOT NULL only rejects null, not empty strings.
+
 describe("DELETE /api/wishlist/[id] behavior", () => {
   it("returns false for non-existent item", () => {
     const db = freshDb();

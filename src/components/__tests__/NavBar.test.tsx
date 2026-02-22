@@ -8,6 +8,7 @@ describe("NavBar", () => {
 
     expect(screen.getByRole("link", { name: /imago/i })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: /collection/i })).toHaveAttribute("href", "/collection");
+    expect(screen.getByRole("link", { name: /wishlist/i })).toHaveAttribute("href", "/wishlist");
     expect(screen.getByRole("link", { name: /statistics/i })).toHaveAttribute("href", "/statistics");
     expect(screen.getByRole("link", { name: /tools/i })).toHaveAttribute("href", "/tools");
     expect(screen.getByRole("button", { name: /add card/i })).toBeInTheDocument();
