@@ -9,6 +9,7 @@ interface FormState {
   setName: string;
   cardNumber: string;
   variant: string;
+  rawPrice: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -18,6 +19,7 @@ const EMPTY_FORM: FormState = {
   setName: "",
   cardNumber: "",
   variant: "",
+  rawPrice: "",
 };
 
 interface Props {
@@ -51,6 +53,7 @@ export function AddWishlistItemModal({ onClose, onAdded }: Props) {
       setName: form.setName.trim() || undefined,
       cardNumber: form.cardNumber.trim() || undefined,
       variant: form.variant.trim() || undefined,
+      rawPrice: form.rawPrice ? parseFloat(form.rawPrice) : undefined,
     };
 
     const res = await fetch("/api/wishlist", {
@@ -80,6 +83,7 @@ export function AddWishlistItemModal({ onClose, onAdded }: Props) {
             { name: "setName", label: "Set", placeholder: "Topps Traded" },
             { name: "cardNumber", label: "Card #", placeholder: "50T" },
             { name: "variant", label: "Variant", placeholder: "Tiffany" },
+            { name: "rawPrice", label: "Raw Price ($)", placeholder: "1.98" },
           ].map(({ name, label, placeholder }) => (
             <div key={name}>
               <label className="mb-1 block text-xs font-medium text-gray-700">

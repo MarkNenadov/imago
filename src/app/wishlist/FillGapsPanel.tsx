@@ -136,8 +136,21 @@ export function FillGapsPanel({ onItemsAdded }: Props) {
       {results.length > 0 && (
         <div className="mt-4">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs text-gray-500">
+            <span className="flex items-center gap-2 text-xs text-gray-500">
               {selected.size} of {results.length} selected
+              <button
+                type="button"
+                onClick={() =>
+                  setSelected(
+                    selected.size === results.length
+                      ? new Set()
+                      : new Set(results.map((_, i) => i)),
+                  )
+                }
+                className="text-blue-500 hover:text-blue-700"
+              >
+                {selected.size === results.length ? "Deselect all" : "Select all"}
+              </button>
             </span>
             <button
               type="button"
