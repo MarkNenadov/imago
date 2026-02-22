@@ -1,6 +1,6 @@
 const CARDSIGHT_API_BASE = "https://api.cardsight.ai";
 const PAGE_SIZE = 100;
-const MAX_YEARS_FOR_PER_YEAR_STRATEGY = 10;
+const MAX_PAGES = 20; // cap at 2000 cards to prevent runaway requests
 
 export interface CatalogCard {
   playerName: string;
@@ -31,16 +31,21 @@ function mapCard(raw: Record<string, unknown>): CatalogCard {
   };
 }
 
-async function fetchYear(
+interface PageResult {
+  cards: CatalogCard[];
+  totalCount: number;
+}
+
+async function fetchPage(
   player: string,
-  year: number,
   sport: string | undefined,
+  skip: number,
   apiKey: string,
-): Promise<CatalogCard[]> {
+): Promise<PageResult | null> {
   const query = new URLSearchParams({
     name: player,
-    releaseYear: String(year),
     take: String(PAGE_SIZE),
+    skip: String(skip),
   });
   if (sport) query.set("sport", sport);
 
@@ -49,51 +54,37 @@ async function fetchYear(
   if (!response.ok) {
     const body = await response.text();
     console.error(`[CardSight catalog] ${response.status}`, body);
-    return [];
+    return null;
   }
 
   const data = await response.json() as Record<string, unknown>;
+  const totalCount = typeof data.total_count === "number" ? data.total_count : 0;
   const raw = (data.cards ?? []) as Record<string, unknown>[];
-  return raw.map(mapCard).filter((c) => c.year === year);
+  return { cards: raw.map(mapCard), totalCount };
 }
 
-async function fetchAllYears(
+async function fetchAllPages(
   params: CatalogSearchParams,
   apiKey: string,
 ): Promise<CatalogCard[]> {
-  const yearFrom = params.yearFrom!;
-  const yearTo = params.yearTo!;
-  const years: number[] = [];
-  for (let y = yearFrom; y <= yearTo; y++) years.push(y);
+  const first = await fetchPage(params.player, params.sport, 0, apiKey);
+  if (!first) return [];
 
-  const perYear = await Promise.all(
-    years.map((y) => fetchYear(params.player, y, params.sport, apiKey)),
-  );
-  return perYear.flat();
-}
+  const pageCount = Math.min(Math.ceil(first.totalCount / PAGE_SIZE), MAX_PAGES);
 
-async function fetchSinglePage(
-  params: CatalogSearchParams,
-  apiKey: string,
-): Promise<CatalogCard[]> {
-  const query = new URLSearchParams({ name: params.player, take: String(PAGE_SIZE) });
-  if (params.sport) query.set("sport", params.sport);
+  const remainingCards = pageCount > 1
+    ? (await Promise.all(
+        Array.from({ length: pageCount - 1 }, (_, i) =>
+          fetchPage(params.player, params.sport, (i + 1) * PAGE_SIZE, apiKey),
+        ),
+      )).flatMap((p) => p?.cards ?? [])
+    : [];
 
-  const url = `${CARDSIGHT_API_BASE}/v1/catalog/cards?${query.toString()}`;
-  const response = await fetch(url, { headers: { "X-API-Key": apiKey } });
-  if (!response.ok) {
-    const body = await response.text();
-    console.error(`[CardSight catalog] ${response.status}`, body);
-    return [];
-  }
+  const allCards = [...first.cards, ...remainingCards];
 
-  const data = await response.json() as Record<string, unknown>;
-  const raw = (data.cards ?? []) as Record<string, unknown>[];
-  const mapped = raw.map(mapCard);
-
-  return mapped.filter((card) => {
-    if (params.yearFrom && card.year != null && card.year < params.yearFrom) return false;
-    if (params.yearTo && card.year != null && card.year > params.yearTo) return false;
+  return allCards.filter((card) => {
+    if (params.yearFrom != null && card.year != null && card.year < params.yearFrom) return false;
+    if (params.yearTo != null && card.year != null && card.year > params.yearTo) return false;
     return true;
   });
 }
@@ -103,15 +94,5 @@ export async function searchCatalog(
   apiKey: string | undefined,
 ): Promise<CatalogCard[]> {
   if (!apiKey) return [];
-
-  const yearSpan =
-    params.yearFrom && params.yearTo ? params.yearTo - params.yearFrom + 1 : null;
-
-  // Per-year strategy: one parallel request per year in range.
-  // Gives much better results than fetching all cards and filtering alphabetically.
-  if (yearSpan !== null && yearSpan <= MAX_YEARS_FOR_PER_YEAR_STRATEGY) {
-    return fetchAllYears(params, apiKey);
-  }
-
-  return fetchSinglePage(params, apiKey);
+  return fetchAllPages(params, apiKey);
 }
