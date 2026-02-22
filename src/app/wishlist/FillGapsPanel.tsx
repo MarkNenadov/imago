@@ -166,6 +166,7 @@ export function FillGapsPanel({ onItemsAdded }: Props) {
                   {card.brand && <span className="ml-2 text-gray-400">{card.brand}</span>}
                   {card.setName && <span className="ml-1 text-gray-400">— {card.setName}</span>}
                   {card.cardNumber && <span className="ml-1 text-gray-400">#{card.cardNumber}</span>}
+                  {card.rawPrice != null && <span className="ml-2 text-green-700 font-medium">${card.rawPrice.toFixed(2)}</span>}
                 </span>
               </label>
             ))}

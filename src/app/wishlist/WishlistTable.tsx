@@ -25,6 +25,7 @@ export function WishlistTable({ items, onDelete }: Props) {
             <th className="pb-2 pr-4 font-medium">Set</th>
             <th className="pb-2 pr-4 font-medium">#</th>
             <th className="pb-2 pr-4 font-medium">Variant</th>
+            <th className="pb-2 pr-4 font-medium">Raw $</th>
             <th className="pb-2 font-medium"></th>
           </tr>
         </thead>
@@ -37,6 +38,9 @@ export function WishlistTable({ items, onDelete }: Props) {
               <td className="py-2 pr-4 text-gray-600">{item.setName ?? "—"}</td>
               <td className="py-2 pr-4 text-gray-600">{item.cardNumber ?? "—"}</td>
               <td className="py-2 pr-4 text-gray-600">{item.variant ?? "—"}</td>
+              <td className="py-2 pr-4 text-gray-600">
+                {item.rawPrice != null ? `$${item.rawPrice.toFixed(2)}` : "—"}
+              </td>
               <td className="py-2">
                 <button
                   type="button"

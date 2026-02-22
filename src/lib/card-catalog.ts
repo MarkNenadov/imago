@@ -1,6 +1,6 @@
 const CARDSIGHT_API_BASE = "https://api.cardsight.ai";
 const PAGE_SIZE = 100;
-const MAX_PAGES = 20; // cap at 2000 cards to prevent runaway requests
+const MAX_PAGES = 20;
 
 export interface CatalogCard {
   playerName: string;
@@ -9,6 +9,7 @@ export interface CatalogCard {
   setName?: string;
   cardNumber?: string;
   variant?: string;
+  rawPrice?: number;
 }
 
 export interface CatalogSearchParams {
@@ -19,6 +20,7 @@ export interface CatalogSearchParams {
 }
 
 function mapCard(raw: Record<string, unknown>): CatalogCard {
+  const prices = raw.prices as Record<string, string> | undefined;
   return {
     playerName: String(raw.name ?? ""),
     year: raw.releaseYear ? Number(raw.releaseYear) : undefined,
@@ -28,6 +30,7 @@ function mapCard(raw: Record<string, unknown>): CatalogCard {
     variant: raw.parallel
       ? String((raw.parallel as Record<string, unknown>).name ?? raw.parallel)
       : undefined,
+    rawPrice: prices?.raw ? parseFloat(prices.raw) : undefined,
   };
 }
 
@@ -71,16 +74,13 @@ async function fetchAllPages(
   if (!first) return [];
 
   const pageCount = Math.min(Math.ceil(first.totalCount / PAGE_SIZE), MAX_PAGES);
+  const allCards = [...first.cards];
 
-  const remainingCards = pageCount > 1
-    ? (await Promise.all(
-        Array.from({ length: pageCount - 1 }, (_, i) =>
-          fetchPage(params.player, params.sport, (i + 1) * PAGE_SIZE, apiKey),
-        ),
-      )).flatMap((p) => p?.cards ?? [])
-    : [];
-
-  const allCards = [...first.cards, ...remainingCards];
+  // Sequential requests to respect the 4 req/sec rate limit
+  for (let i = 1; i < pageCount; i++) {
+    const page = await fetchPage(params.player, params.sport, i * PAGE_SIZE, apiKey);
+    if (page) allCards.push(...page.cards);
+  }
 
   return allCards.filter((card) => {
     if (params.yearFrom != null && card.year != null && card.year < params.yearFrom) return false;

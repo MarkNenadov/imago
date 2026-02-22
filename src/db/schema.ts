@@ -47,6 +47,7 @@ export const wishlistItems = sqliteTable("wishlist_items", {
   setName: text("set_name"),
   cardNumber: text("card_number"),
   variant: text("variant"),
+  rawPrice: real("raw_price"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
