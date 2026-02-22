@@ -1394,7 +1394,10 @@ export default function ToolsPage() {
   const params = useParams();
   const [cards, setCards] = useState<Card[]>([]);
 
-  const activeTab = (params.tab as ToolsTab) ?? "audit";
+  const rawTab = params.tab as string;
+  const activeTab: ToolsTab = TABS.some((t) => t.key === rawTab)
+    ? (rawTab as ToolsTab)
+    : "audit";
 
   useEffect(() => {
     fetch("/api/cards?sortBy=playerName&sortOrder=asc")
