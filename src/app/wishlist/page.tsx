@@ -22,8 +22,10 @@ export default function WishlistPage() {
   }, [loadItems]);
 
   async function handleDelete(id: string) {
-    await fetch(`/api/wishlist/${id}`, { method: "DELETE" });
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    const res = await fetch(`/api/wishlist/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    }
   }
 
   return (
