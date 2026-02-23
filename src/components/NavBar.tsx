@@ -32,7 +32,7 @@ export function NavBar() {
                 href="/statistics"
                 className="text-sm font-medium text-gray-700 hover:text-gray-900"
               >
-                Statistics
+                Stats
               </Link>
               <Link
                 href="/tools"
