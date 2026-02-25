@@ -48,8 +48,9 @@ export default function WishlistPage() {
     );
   });
 
-  const totalPages = Math.ceil(filteredItems.length / PAGE_SIZE);
-  const pageItems = filteredItems.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const sortedItems = [...filteredItems].sort((a, b) => (a.year ?? Infinity) - (b.year ?? Infinity));
+  const totalPages = Math.ceil(sortedItems.length / PAGE_SIZE);
+  const pageItems = sortedItems.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -75,10 +76,10 @@ export default function WishlistPage() {
         <WishlistTable items={pageItems} onDelete={handleDelete} />
       </div>
 
-      {filteredItems.length > PAGE_SIZE && (
+      {sortedItems.length > PAGE_SIZE && (
         <div className="mb-8 flex items-center justify-between text-sm text-gray-500">
           <span>
-            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredItems.length)} of {filteredItems.length}
+            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, sortedItems.length)} of {sortedItems.length}
           </span>
           <div className="flex gap-2">
             <button
