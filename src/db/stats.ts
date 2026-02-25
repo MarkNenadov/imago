@@ -3,11 +3,20 @@ import type { getDb } from "./index";
 
 type DrizzleDb = ReturnType<typeof getDb>;
 
+interface ExpensiveCard {
+  id: string;
+  playerName: string;
+  year: number | null;
+  brand: string | null;
+  purchasePrice: number;
+}
+
 interface CollectionStats {
   totalCards: number;
   totalImages: number;
   distinctPlayers: number;
   totalInvested: number;
+  topExpensive: ExpensiveCard[];
   bySport: Record<string, number>;
   byLocation: Record<string, number>;
   byTeam: Record<string, number>;
@@ -30,6 +39,17 @@ export function getCollectionStats(db: DrizzleDb): CollectionStats {
   );
   const distinctPlayers = new Set(allCards.map((c) => c.playerName)).size;
   const totalInvested = allCards.reduce((sum, c) => sum + (c.purchasePrice ?? 0), 0);
+  const topExpensive: ExpensiveCard[] = allCards
+    .filter((c) => c.purchasePrice != null)
+    .sort((a, b) => (b.purchasePrice ?? 0) - (a.purchasePrice ?? 0))
+    .slice(0, 5)
+    .map(({ id, playerName, year, brand, purchasePrice }) => ({
+      id,
+      playerName,
+      year,
+      brand,
+      purchasePrice: purchasePrice!,
+    }));
 
   const bySport: Record<string, number> = {};
   const byLocation: Record<string, number> = {};
@@ -107,6 +127,7 @@ export function getCollectionStats(db: DrizzleDb): CollectionStats {
     totalImages,
     distinctPlayers,
     totalInvested,
+    topExpensive,
     bySport,
     byLocation,
     byTeam,
