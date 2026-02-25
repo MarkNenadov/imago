@@ -1,4 +1,4 @@
-import { eq, like, or, and, desc, asc, sql, type AnyColumn, type SQL } from "drizzle-orm";
+import { eq, like, or, and, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import { cards, type Card, type NewCard } from "./schema";
 import type { getDb } from "./index";
@@ -83,7 +83,9 @@ export function listCardsPaginated(db: DrizzleDb, filters?: ListFilters): Pagina
     const col = sortableColumns[filters.sortBy];
     if (col) {
       query = query.orderBy(
-        filters.sortOrder === "desc" ? desc(col) : asc(col),
+        filters.sortOrder === "desc"
+          ? sql`${col} DESC NULLS LAST`
+          : sql`${col} ASC NULLS LAST`,
       );
     }
   }

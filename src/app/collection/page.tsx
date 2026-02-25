@@ -45,7 +45,7 @@ function CollectionContent() {
     if (filters.tag) params.set("tag", filters.tag);
     if (filters.setName) params.set("setName", filters.setName);
     if (filters.sortBy) params.set("sortBy", filters.sortBy);
-    if (filters.sortBy) params.set("sortOrder", filters.sortOrder);
+    if (filters.sortOrder) params.set("sortOrder", filters.sortOrder);
 
     const response = await fetch(`/api/cards?${params}`);
     const data = await response.json();

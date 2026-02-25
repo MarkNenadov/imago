@@ -113,6 +113,30 @@ describe("listCards", () => {
     const sorted = listCards(db, { sortBy: "purchasePrice", sortOrder: "desc" });
     expect(sorted[0].purchasePrice).toBe(50);
   });
+
+  it("should sort nulls last when sorting by purchase price ascending", () => {
+    const db = freshDb();
+    createCard(db, { ...sampleCard, playerName: "NullPrice", purchasePrice: undefined });
+    createCard(db, { ...sampleCard, playerName: "LowPrice", purchasePrice: 0.02 });
+    createCard(db, { ...sampleCard, playerName: "HighPrice", purchasePrice: 50 });
+
+    const sorted = listCards(db, { sortBy: "purchasePrice", sortOrder: "asc" });
+    expect(sorted[0].purchasePrice).toBe(0.02);
+    expect(sorted[1].purchasePrice).toBe(50);
+    expect(sorted[2].purchasePrice).toBeNull();
+  });
+
+  it("should sort nulls last when sorting by purchase price descending", () => {
+    const db = freshDb();
+    createCard(db, { ...sampleCard, playerName: "NullPrice", purchasePrice: undefined });
+    createCard(db, { ...sampleCard, playerName: "LowPrice", purchasePrice: 0.02 });
+    createCard(db, { ...sampleCard, playerName: "HighPrice", purchasePrice: 50 });
+
+    const sorted = listCards(db, { sortBy: "purchasePrice", sortOrder: "desc" });
+    expect(sorted[0].purchasePrice).toBe(50);
+    expect(sorted[1].purchasePrice).toBe(0.02);
+    expect(sorted[2].purchasePrice).toBeNull();
+  });
 });
 
 describe("listCards with q (text search)", () => {
