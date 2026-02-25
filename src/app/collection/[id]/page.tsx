@@ -141,7 +141,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_3fr]">
         {/* Images */}
         <div className="space-y-3">
           {card.imageFront ? (
