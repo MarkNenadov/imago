@@ -20,6 +20,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/cards/${id}`)
@@ -127,6 +128,19 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       )}
 
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setLightboxSrc(null)}
+        >
+          <img
+            src={lightboxSrc}
+            alt="Full size"
+            className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl"
+          />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Images */}
         <div className="space-y-3">
@@ -134,10 +148,11 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
             <img
               src={card.imageFront}
               alt={`${card.playerName} front`}
-              className="w-full rounded-lg shadow-sm"
+              className="w-3/4 cursor-zoom-in rounded-lg shadow-sm"
+              onClick={() => setLightboxSrc(card.imageFront!)}
             />
           ) : (
-            <div className="flex aspect-[2.5/3.5] items-center justify-center rounded-lg bg-gray-100 text-gray-400">
+            <div className="flex aspect-[2.5/3.5] w-3/4 items-center justify-center rounded-lg bg-gray-100 text-gray-400">
               No front image
             </div>
           )}
@@ -145,7 +160,8 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
             <img
               src={card.imageBack}
               alt={`${card.playerName} back`}
-              className="w-full rounded-lg shadow-sm"
+              className="w-3/4 cursor-zoom-in rounded-lg shadow-sm"
+              onClick={() => setLightboxSrc(card.imageBack!)}
             />
           )}
         </div>
