@@ -178,14 +178,14 @@ export default function StatisticsPage() {
             <h3 className="mb-3 text-sm font-semibold text-gray-700">Top 5 Most Expensive</h3>
             <div className="space-y-2">
               {stats.topExpensive.map((card) => (
-                <div key={card.id} className="flex items-center justify-between text-sm">
+                <div key={card.id} className="grid grid-cols-[1fr_auto_6rem] items-center gap-4 text-sm">
                   <Link href={`/collection/${card.id}`} className="font-medium text-blue-600 hover:underline">
                     {card.playerName}
                   </Link>
                   <span className="text-gray-400">
                     {[card.year, card.brand].filter(Boolean).join(" ")}
                   </span>
-                  <span className="font-semibold text-gray-900">${card.purchasePrice.toFixed(2)}</span>
+                  <span className="text-right font-semibold text-gray-900">${card.purchasePrice.toFixed(2)}</span>
                 </div>
               ))}
             </div>
