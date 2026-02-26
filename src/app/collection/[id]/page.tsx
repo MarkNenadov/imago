@@ -6,6 +6,29 @@ import Link from "next/link";
 import { CardForm, type CardFormData } from "@/components/CardForm";
 import type { Card } from "@/db/schema";
 
+function RotateControls({ onRotate }: { onRotate: (delta: number) => void }) {
+  return (
+    <div className="mt-2 flex gap-2">
+      <button
+        type="button"
+        onClick={() => onRotate(-90)}
+        className="rounded border border-gray-200 px-2 py-1 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+        title="Rotate left"
+      >
+        ↺
+      </button>
+      <button
+        type="button"
+        onClick={() => onRotate(90)}
+        className="rounded border border-gray-200 px-2 py-1 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+        title="Rotate right"
+      >
+        ↻
+      </button>
+    </div>
+  );
+}
+
 function nullsToUndefined<T extends Record<string, unknown>>(obj: T) {
   return Object.fromEntries(
     Object.entries(obj).map(([k, v]) => [k, v === null ? undefined : v]),
@@ -20,7 +43,9 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ src: string; rotation: number } | null>(null);
+  const [rotateFront, setRotateFront] = useState(0);
+  const [rotateBack, setRotateBack] = useState(0);
 
   useEffect(() => {
     fetch(`/api/cards/${id}`)
@@ -128,41 +153,50 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       )}
 
-      {lightboxSrc && (
+      {lightbox && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-          onClick={() => setLightboxSrc(null)}
+          onClick={() => setLightbox(null)}
         >
           <img
-            src={lightboxSrc}
+            src={lightbox.src}
             alt="Full size"
-            className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl"
+            className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl transition-transform duration-200"
+            style={{ transform: `rotate(${lightbox.rotation}deg)` }}
           />
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_3fr]">
         {/* Images */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           {card.imageFront ? (
-            <img
-              src={card.imageFront}
-              alt={`${card.playerName} front`}
-              className="w-3/4 cursor-zoom-in rounded-lg shadow-sm"
-              onClick={() => setLightboxSrc(card.imageFront!)}
-            />
+            <div>
+              <img
+                src={card.imageFront}
+                alt={`${card.playerName} front`}
+                className="w-3/4 cursor-zoom-in rounded-lg shadow-sm transition-transform duration-200"
+                style={{ transform: `rotate(${rotateFront}deg)` }}
+                onClick={() => setLightbox({ src: card.imageFront!, rotation: rotateFront })}
+              />
+              <RotateControls onRotate={(delta) => setRotateFront((r) => (r + delta + 360) % 360)} />
+            </div>
           ) : (
             <div className="flex aspect-[2.5/3.5] w-3/4 items-center justify-center rounded-lg bg-gray-100 text-gray-400">
               No front image
             </div>
           )}
           {card.imageBack && (
-            <img
-              src={card.imageBack}
-              alt={`${card.playerName} back`}
-              className="w-3/4 cursor-zoom-in rounded-lg shadow-sm"
-              onClick={() => setLightboxSrc(card.imageBack!)}
-            />
+            <div>
+              <img
+                src={card.imageBack}
+                alt={`${card.playerName} back`}
+                className="w-3/4 cursor-zoom-in rounded-lg shadow-sm transition-transform duration-200"
+                style={{ transform: `rotate(${rotateBack}deg)` }}
+                onClick={() => setLightbox({ src: card.imageBack!, rotation: rotateBack })}
+              />
+              <RotateControls onRotate={(delta) => setRotateBack((r) => (r + delta + 360) % 360)} />
+            </div>
           )}
         </div>
 
