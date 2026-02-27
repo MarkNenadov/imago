@@ -59,7 +59,7 @@ export function getCollectionStats(db: DrizzleDb): CollectionStats {
   const byEntryMonth: Record<string, number> = {};
   const byDecade: Record<string, number> = {};
   const rookieVsNon: Record<string, number> = { "Rookie Card": 0, "Non-Rookie": 0 };
-  const batterVsPitcher: Record<string, number> = { Batter: 0, Pitcher: 0, Manager: 0, Unknown: 0 };
+  const batterVsPitcher: Record<string, number> = { Batter: 0, Pitcher: 0, Manager: 0, Defenseman: 0, Forward: 0, Goalie: 0, Unknown: 0 };
   const hofVsNon: Record<string, number> = { "Hall of Famer": 0, "Non-HOF": 0 };
 
   for (const card of allCards) {
@@ -110,6 +110,12 @@ export function getCollectionStats(db: DrizzleDb): CollectionStats {
       batterVsPitcher["Batter"] += 1;
     } else if (tagSet.has("manager") || tagSet.has("managers")) {
       batterVsPitcher["Manager"] += 1;
+    } else if (tagSet.has("defenseman")) {
+      batterVsPitcher["Defenseman"] += 1;
+    } else if (tagSet.has("forward")) {
+      batterVsPitcher["Forward"] += 1;
+    } else if (tagSet.has("goalie")) {
+      batterVsPitcher["Goalie"] += 1;
     } else {
       batterVsPitcher["Unknown"] += 1;
     }
@@ -136,7 +142,7 @@ export function getCollectionStats(db: DrizzleDb): CollectionStats {
     byEntryMonth,
     byDecade,
     rookieVsNon,
-    batterVsPitcher,
+    batterVsPitcher: Object.fromEntries(Object.entries(batterVsPitcher).filter(([, v]) => v > 0)),
     hofVsNon,
   };
 }
