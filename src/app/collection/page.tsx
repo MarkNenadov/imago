@@ -15,6 +15,7 @@ function CollectionContent() {
   const searchParams = useSearchParams();
   const [cards, setCards] = useState<Card[]>([]);
   const [totalCards, setTotalCards] = useState(0);
+  const [totalCost, setTotalCost] = useState(0);
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<ViewMode>("gallery");
   const [loading, setLoading] = useState(true);
@@ -51,6 +52,7 @@ function CollectionContent() {
     const data = await response.json();
     setCards(data.cards);
     setTotalCards(data.total);
+    setTotalCost(data.totalCost ?? 0);
     setLoading(false);
   }, [filters, page]);
 
@@ -96,6 +98,7 @@ function CollectionContent() {
             <>
               <p className="mb-3 text-sm text-gray-500">
                 {totalCards} card{totalCards !== 1 ? "s" : ""}
+                {totalCost > 0 && ` · $${totalCost.toFixed(2)} invested`}
                 {totalPages > 1 && ` — page ${page} of ${totalPages}`}
               </p>
 

@@ -33,6 +33,7 @@ interface ListFilters {
 export interface PaginatedCards {
   cards: Card[];
   total: number;
+  totalCost: number;
 }
 
 export function listCards(db: DrizzleDb, filters?: ListFilters): Card[] {
@@ -42,6 +43,7 @@ export function listCards(db: DrizzleDb, filters?: ListFilters): Card[] {
 export function listCardsPaginated(db: DrizzleDb, filters?: ListFilters): PaginatedCards {
   let query = db.select().from(cards).$dynamic();
   let countQuery = db.select({ count: sql<number>`count(*)` }).from(cards).$dynamic();
+  let costQuery = db.select({ sum: sql<number | null>`sum(${cards.purchasePrice})` }).from(cards).$dynamic();
 
   const conditions: SQL[] = [];
   if (filters?.q) {
@@ -68,6 +70,7 @@ export function listCardsPaginated(db: DrizzleDb, filters?: ListFilters): Pagina
     const where = and(...conditions)!;
     query = query.where(where);
     countQuery = countQuery.where(where);
+    costQuery = costQuery.where(where);
   }
 
   if (filters?.sortBy) {
@@ -91,6 +94,7 @@ export function listCardsPaginated(db: DrizzleDb, filters?: ListFilters): Pagina
   }
 
   const total = countQuery.get()!.count;
+  const totalCost = costQuery.get()!.sum ?? 0;
 
   if (filters?.limit) {
     query = query.limit(filters.limit);
@@ -99,7 +103,7 @@ export function listCardsPaginated(db: DrizzleDb, filters?: ListFilters): Pagina
     query = query.offset(filters.offset);
   }
 
-  return { cards: query.all(), total };
+  return { cards: query.all(), total, totalCost };
 }
 
 export function searchCards(db: DrizzleDb, query: string): Card[] {
