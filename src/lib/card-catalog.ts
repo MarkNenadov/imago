@@ -69,9 +69,9 @@ async function fetchPage(
 async function fetchAllPages(
   params: CatalogSearchParams,
   apiKey: string,
-): Promise<CatalogCard[]> {
+): Promise<CatalogCard[] | null> {
   const first = await fetchPage(params.player, params.sport, 0, apiKey);
-  if (!first) return [];
+  if (!first) return null;
 
   const pageCount = Math.min(Math.ceil(first.totalCount / PAGE_SIZE), MAX_PAGES);
   const allCards = [...first.cards];
@@ -92,7 +92,7 @@ async function fetchAllPages(
 export async function searchCatalog(
   params: CatalogSearchParams,
   apiKey: string | undefined,
-): Promise<CatalogCard[]> {
+): Promise<CatalogCard[] | null> {
   if (!apiKey) return [];
   return fetchAllPages(params, apiKey);
 }

@@ -96,7 +96,7 @@ describe("searchCatalog", () => {
     expect(result[0].year).toBe(1985);
   });
 
-  it("returns empty array on API error", async () => {
+  it("returns null on API error", async () => {
     mockFetch.mockResolvedValue({ ok: false, status: 500, text: async () => "error" });
 
     const result = await searchCatalog(
@@ -104,6 +104,6 @@ describe("searchCatalog", () => {
       "test-api-key",
     );
 
-    expect(result).toEqual([]);
+    expect(result).toBeNull();
   });
 });

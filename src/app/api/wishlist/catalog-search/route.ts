@@ -18,6 +18,10 @@ export async function GET(request: NextRequest) {
   const apiKey = process.env.CARDSIGHT_API_KEY;
   const catalog = await searchCatalog({ player, yearFrom, yearTo, sport }, apiKey);
 
+  if (catalog === null) {
+    return NextResponse.json({ error: "Card catalog search failed" }, { status: 503 });
+  }
+
   const db = getDb();
   const gaps = filterCatalogGaps(db, catalog);
 

@@ -34,7 +34,7 @@ export function FillGapsPanel({ onItemsAdded }: Props) {
     setSearching(false);
 
     if (!res.ok) {
-      setStatusMessage("Catalog search unavailable. Try again later.");
+      setStatusMessage("Card catalog search failed — the catalog service may be temporarily unavailable.");
       return;
     }
 
