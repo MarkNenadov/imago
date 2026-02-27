@@ -82,7 +82,7 @@ Open [http://localhost:3000](http://localhost:3000) to start managing your colle
 ### Run Tests
 
 ```bash
-npx vitest run
+bunx vitest run
 ```
 
 ### Build for Production
