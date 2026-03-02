@@ -55,6 +55,7 @@ const NHL_TEAMS = [
   "New York Islanders",
   "New York Rangers",
   "Ottawa Senators",
+  "Quebec Nordiques",
   "Philadelphia Flyers",
   "Pittsburgh Penguins",
   "San Jose Sharks",
