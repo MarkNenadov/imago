@@ -39,13 +39,13 @@ describe("getCollectionStats", () => {
     const db = freshDb();
     createCard(db, { playerName: "McDavid", sport: "hockey", tags: ["forward"] });
     createCard(db, { playerName: "Crosby", sport: "hockey", tags: ["forward"] });
-    createCard(db, { playerName: "Pronger", sport: "hockey", tags: ["defenseman"] });
+    createCard(db, { playerName: "Pronger", sport: "hockey", tags: ["defencemen"] });
     createCard(db, { playerName: "Roy", sport: "hockey", tags: ["goalie"] });
 
     const stats = getCollectionStats(db);
 
     expect(stats.batterVsPitcher["Forward"]).toBe(2);
-    expect(stats.batterVsPitcher["Defenseman"]).toBe(1);
+    expect(stats.batterVsPitcher["Defencemen"]).toBe(1);
     expect(stats.batterVsPitcher["Goalie"]).toBe(1);
     expect(stats.batterVsPitcher["Unknown"]).toBeUndefined();
   });

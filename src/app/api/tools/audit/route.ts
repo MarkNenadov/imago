@@ -16,7 +16,7 @@ const IMPORTANT_FIELDS = [
   { key: "imageFront", label: "Front Image" },
 ] as const;
 
-const POSITION_TAGS = ["batter", "batters", "pitcher", "pitchers", "manager", "managers", "defenseman", "forward", "goalie"];
+const POSITION_TAGS = ["batter", "batters", "pitcher", "pitchers", "manager", "managers", "defencemen", "forward", "goalie"];
 
 export async function GET() {
   const db = getDb();
