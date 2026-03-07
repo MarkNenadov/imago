@@ -12,6 +12,29 @@ export interface CatalogCard {
   rawPrice?: number;
 }
 
+export interface PriceMatchParams {
+  year: number;
+  brand: string;
+  setName?: string;
+  cardNumber?: string;
+  variant?: string;
+}
+
+export function findMatchingPrice(
+  cards: CatalogCard[],
+  params: PriceMatchParams,
+): number | null {
+  const match = cards.find((card) => {
+    if (card.year !== params.year) return false;
+    if (card.brand !== params.brand) return false;
+    if (params.setName != null && card.setName !== params.setName) return false;
+    if (params.cardNumber != null && card.cardNumber !== params.cardNumber) return false;
+    if (params.variant != null && card.variant !== params.variant) return false;
+    return true;
+  });
+  return match?.rawPrice ?? null;
+}
+
 export interface CatalogSearchParams {
   player: string;
   yearFrom?: number;

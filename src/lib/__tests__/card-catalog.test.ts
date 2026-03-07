@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { searchCatalog } from "@/lib/card-catalog";
+import { searchCatalog, findMatchingPrice, type CatalogCard } from "@/lib/card-catalog";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -104,6 +104,50 @@ describe("searchCatalog", () => {
       "test-api-key",
     );
 
+    expect(result).toBeNull();
+  });
+});
+
+describe("findMatchingPrice", () => {
+  const cards: CatalogCard[] = [
+    { playerName: "Rickey Henderson", year: 1985, brand: "Topps", setName: "Base Set", cardNumber: "695", rawPrice: 12.50 },
+    { playerName: "Rickey Henderson", year: 1985, brand: "Topps", setName: "Base Set", cardNumber: "696", rawPrice: 5.00 },
+    { playerName: "Rickey Henderson", year: 1986, brand: "Topps", setName: "Base Set", cardNumber: "695", rawPrice: 8.00 },
+    { playerName: "Rickey Henderson", year: 1985, brand: "Fleer", setName: "Base Set", cardNumber: "695", rawPrice: 3.00 },
+    { playerName: "Rickey Henderson", year: 1985, brand: "Topps", setName: "Base Set", cardNumber: "100", rawPrice: undefined },
+  ];
+
+  it("returns price when year, brand, and cardNumber all match", () => {
+    const result = findMatchingPrice(cards, { year: 1985, brand: "Topps", cardNumber: "695" });
+    expect(result).toBe(12.50);
+  });
+
+  it("returns null when year does not match", () => {
+    const result = findMatchingPrice(cards, { year: 1990, brand: "Topps", cardNumber: "695" });
+    expect(result).toBeNull();
+  });
+
+  it("returns null when brand does not match", () => {
+    const result = findMatchingPrice(cards, { year: 1985, brand: "Donruss", cardNumber: "695" });
+    expect(result).toBeNull();
+  });
+
+  it("further filters by optional setName when provided", () => {
+    const result = findMatchingPrice(cards, { year: 1985, brand: "Topps", setName: "Base Set", cardNumber: "695" });
+    expect(result).toBe(12.50);
+  });
+
+  it("further filters by optional variant when provided", () => {
+    const withVariant: CatalogCard[] = [
+      { playerName: "X", year: 1985, brand: "Topps", cardNumber: "695", variant: "Foil", rawPrice: 20.00 },
+      { playerName: "X", year: 1985, brand: "Topps", cardNumber: "695", variant: undefined, rawPrice: 5.00 },
+    ];
+    const result = findMatchingPrice(withVariant, { year: 1985, brand: "Topps", cardNumber: "695", variant: "Foil" });
+    expect(result).toBe(20.00);
+  });
+
+  it("returns null when match has no rawPrice", () => {
+    const result = findMatchingPrice(cards, { year: 1985, brand: "Topps", cardNumber: "100" });
     expect(result).toBeNull();
   });
 });
