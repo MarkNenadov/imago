@@ -26,6 +26,5 @@ export async function fetchSubscription(
   }
 
   const raw = await response.json() as Record<string, unknown>;
-  console.log("[CardSight subscription] Raw response:", JSON.stringify(raw, null, 2));
   return mapSubscription(raw);
 }
