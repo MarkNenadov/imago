@@ -18,11 +18,11 @@ describe("fetchSubscription", () => {
   it("returns subscription info with calls remaining on success", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ calls_remaining: 150 }),
+      json: async () => ({ calls: 100 }),
     });
 
     const result = await fetchSubscription("test-api-key");
-    expect(result).toEqual({ callsRemaining: 150 });
+    expect(result).toEqual({ callsRemaining: 650 }); // 750 - 100
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.cardsight.ai/v1/subscription",
       { headers: { "X-API-Key": "test-api-key" } },

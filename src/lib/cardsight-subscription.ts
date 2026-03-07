@@ -4,9 +4,12 @@ export interface SubscriptionInfo {
   callsRemaining: number;
 }
 
+const MONTHLY_QUOTA = 750;
+
 function mapSubscription(raw: Record<string, unknown>): SubscriptionInfo {
+  const callsUsed = typeof raw.calls === "number" ? raw.calls : 0;
   return {
-    callsRemaining: typeof raw.calls_remaining === "number" ? raw.calls_remaining : 0,
+    callsRemaining: MONTHLY_QUOTA - callsUsed,
   };
 }
 
