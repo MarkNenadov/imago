@@ -6,6 +6,13 @@ import Link from "next/link";
 import { CardForm, type CardFormData } from "@/components/CardForm";
 import type { Card } from "@/db/schema";
 
+type MarketPriceState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "found"; price: number }
+  | { status: "not-found" }
+  | { status: "error" };
+
 function RotateControls({ onRotate }: { onRotate: (delta: number) => void }) {
   return (
     <div className="mt-2 flex gap-2">
@@ -29,6 +36,34 @@ function RotateControls({ onRotate }: { onRotate: (delta: number) => void }) {
   );
 }
 
+function MarketPriceDisplay({
+  state,
+  onFetch,
+}: {
+  state: MarketPriceState;
+  onFetch: () => void;
+}) {
+  if (state.status === "found") {
+    return <p className="text-sm font-medium text-gray-900">${state.price.toFixed(2)}</p>;
+  }
+  if (state.status === "not-found") {
+    return <p className="text-sm text-gray-400">Not found</p>;
+  }
+  if (state.status === "error") {
+    return <p className="text-sm text-red-500">Lookup failed</p>;
+  }
+  return (
+    <button
+      type="button"
+      onClick={onFetch}
+      disabled={state.status === "loading"}
+      className="text-sm font-medium text-blue-600 hover:underline disabled:text-gray-400 disabled:no-underline"
+    >
+      {state.status === "loading" ? "Loading…" : "Check"}
+    </button>
+  );
+}
+
 function nullsToUndefined<T extends Record<string, unknown>>(obj: T) {
   return Object.fromEntries(
     Object.entries(obj).map(([k, v]) => [k, v === null ? undefined : v]),
@@ -46,6 +81,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
   const [lightbox, setLightbox] = useState<{ src: string; rotation: number } | null>(null);
   const [rotateFront, setRotateFront] = useState(0);
   const [rotateBack, setRotateBack] = useState(0);
+  const [marketPrice, setMarketPrice] = useState<MarketPriceState>({ status: "idle" });
 
   useEffect(() => {
     fetch(`/api/cards/${id}`)
@@ -73,6 +109,36 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
       setError(err instanceof Error ? err.message : "Update failed");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function fetchMarketPrice() {
+    if (!card) return;
+    setMarketPrice({ status: "loading" });
+
+    const params = new URLSearchParams({
+      player: card.playerName,
+      year: String(card.year),
+      brand: card.brand!,
+    });
+    if (card.setName) params.set("setName", card.setName);
+    if (card.cardNumber) params.set("cardNumber", card.cardNumber);
+    if (card.variant) params.set("variant", card.variant);
+
+    try {
+      const res = await fetch(`/api/cardsight/price?${params.toString()}`);
+      if (!res.ok) {
+        setMarketPrice({ status: "error" });
+        return;
+      }
+      const body = await res.json() as { price: number | null };
+      setMarketPrice(
+        body.price != null
+          ? { status: "found", price: body.price }
+          : { status: "not-found" },
+      );
+    } catch {
+      setMarketPrice({ status: "error" });
     }
   }
 
@@ -261,42 +327,46 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
           </div>
 
           {/* Purchase & Location */}
-          {(card.purchasePrice != null || card.purchaseDate || card.purchaseSource || card.location) && (
-            <div className="rounded-lg border border-gray-200 bg-white p-4">
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Purchase & Location</h2>
-              <div className="grid grid-cols-3 gap-3">
-                {card.purchasePrice != null && (
-                  <div>
-                    <p className="text-xs text-gray-500">Price</p>
-                    <p className="text-sm font-medium text-gray-900">${card.purchasePrice.toFixed(2)}</p>
-                  </div>
-                )}
-                {card.purchaseDate && (
-                  <div>
-                    <p className="text-xs text-gray-500">Date</p>
-                    <p className="text-sm font-medium text-gray-900">{card.purchaseDate}</p>
-                  </div>
-                )}
-                {card.purchaseSource && (
-                  <div>
-                    <p className="text-xs text-gray-500">Source</p>
-                    <p className="text-sm font-medium text-gray-900">{card.purchaseSource}</p>
-                  </div>
-                )}
-                {card.location && (
-                  <div>
-                    <p className="text-xs text-gray-500">Location</p>
-                    <Link
-                      href={`/collection?location=${encodeURIComponent(card.location)}`}
-                      className="text-sm font-medium text-blue-600 hover:underline"
-                    >
-                      {card.location}
-                    </Link>
-                  </div>
-                )}
-              </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-4">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Purchase & Location</h2>
+            <div className="grid grid-cols-3 gap-3">
+              {card.purchasePrice != null && (
+                <div>
+                  <p className="text-xs text-gray-500">Price</p>
+                  <p className="text-sm font-medium text-gray-900">${card.purchasePrice.toFixed(2)}</p>
+                </div>
+              )}
+              {card.purchaseDate && (
+                <div>
+                  <p className="text-xs text-gray-500">Date</p>
+                  <p className="text-sm font-medium text-gray-900">{card.purchaseDate}</p>
+                </div>
+              )}
+              {card.purchaseSource && (
+                <div>
+                  <p className="text-xs text-gray-500">Source</p>
+                  <p className="text-sm font-medium text-gray-900">{card.purchaseSource}</p>
+                </div>
+              )}
+              {card.location && (
+                <div>
+                  <p className="text-xs text-gray-500">Location</p>
+                  <Link
+                    href={`/collection?location=${encodeURIComponent(card.location)}`}
+                    className="text-sm font-medium text-blue-600 hover:underline"
+                  >
+                    {card.location}
+                  </Link>
+                </div>
+              )}
+              {card.playerName && card.year && card.brand && (
+                <div>
+                  <p className="text-xs text-gray-500">Market Price</p>
+                  <MarketPriceDisplay state={marketPrice} onFetch={fetchMarketPrice} />
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Tags */}
           {card.tags && (card.tags as string[]).length > 0 && (
