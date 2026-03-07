@@ -1,11 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AddCardModal } from "./AddCardModal";
 
 export function NavBar() {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [callsRemaining, setCallsRemaining] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/cardsight/subscription")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { callsRemaining: number } | null) => {
+        if (data?.callsRemaining != null) {
+          setCallsRemaining(data.callsRemaining);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <>
@@ -40,6 +52,13 @@ export function NavBar() {
               >
                 Tools
               </Link>
+              {callsRemaining !== null && (
+                <span
+                  className={`text-xs ${callsRemaining <= 20 ? "text-amber-500" : "text-gray-400"}`}
+                >
+                  {callsRemaining} calls left
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => setShowAddModal(true)}
