@@ -6,7 +6,7 @@ export async function GET() {
   if (!apiKey) {
     return NextResponse.json(
       { error: "CARDSIGHT_API_KEY is not configured" },
-      { status: 404 },
+      { status: 503 },
     );
   }
 

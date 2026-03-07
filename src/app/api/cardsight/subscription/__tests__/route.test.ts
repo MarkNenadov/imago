@@ -10,14 +10,13 @@ const mockFetchSubscription = vi.mocked(fetchSubscription);
 
 beforeEach(() => {
   vi.resetAllMocks();
+  delete process.env.CARDSIGHT_API_KEY;
 });
 
 describe("GET /api/cardsight/subscription", () => {
-  it("returns 404 when CARDSIGHT_API_KEY is not set", async () => {
-    delete process.env.CARDSIGHT_API_KEY;
-
+  it("returns 503 when CARDSIGHT_API_KEY is not set", async () => {
     const response = await GET();
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(503);
   });
 
   it("returns subscription info when fetch succeeds", async () => {
