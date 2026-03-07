@@ -74,6 +74,13 @@ describe("GET /api/cardsight/price", () => {
     expect(body).toEqual({ price: null });
   });
 
+  it("returns 400 when year is not a valid integer", async () => {
+    process.env.CARDSIGHT_API_KEY = "test-key";
+    const req = makeRequest({ player: "Rickey Henderson", year: "abc", brand: "Topps" });
+    const res = await GET(req);
+    expect(res.status).toBe(400);
+  });
+
   it("returns 502 when searchCatalog fails", async () => {
     process.env.CARDSIGHT_API_KEY = "test-key";
     mockSearchCatalog.mockResolvedValueOnce(null);

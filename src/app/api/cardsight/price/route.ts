@@ -23,6 +23,13 @@ export async function GET(request: NextRequest) {
   }
 
   const year = Number(yearRaw);
+  if (!Number.isInteger(year)) {
+    return NextResponse.json(
+      { error: "year must be a valid integer" },
+      { status: 400 },
+    );
+  }
+
   const setName = params.get("setName") ?? undefined;
   const cardNumber = params.get("cardNumber") ?? undefined;
   const variant = params.get("variant") ?? undefined;
