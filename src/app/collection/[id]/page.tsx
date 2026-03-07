@@ -87,7 +87,6 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
       year: String(card.year),
       brand: card.brand!,
     });
-    if (card.setName) params.set("setName", card.setName);
     if (card.cardNumber) params.set("cardNumber", card.cardNumber);
     if (card.variant) params.set("variant", card.variant);
 
