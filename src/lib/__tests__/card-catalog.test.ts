@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { searchCatalog, findMatchingPrice, type CatalogCard } from "@/lib/card-catalog";
+import { searchCatalog, findMatchingPrice, findPriceInCatalog, clearCatalogCache, type CatalogCard } from "@/lib/card-catalog";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
 beforeEach(() => {
   mockFetch.mockReset();
+  clearCatalogCache();
 });
 
 // Raw API response shape (matches actual CardSight catalog response)
@@ -101,6 +102,68 @@ describe("searchCatalog", () => {
 
     const result = await searchCatalog(
       { player: "Rickey Henderson", yearFrom: 1985, yearTo: 1986 },
+      "test-api-key",
+    );
+
+    expect(result).toBeNull();
+  });
+});
+
+describe("findPriceInCatalog", () => {
+  const BASE_PARAMS = { year: 1985, brand: "Topps", cardNumber: "695" };
+
+  it("returns { price } when match is on the first page", async () => {
+    mockFetch.mockResolvedValueOnce(mockPage([HENDERSON_1985_RAW]));
+
+    const result = await findPriceInCatalog(
+      { player: "Rickey Henderson" },
+      BASE_PARAMS,
+      "test-api-key",
+    );
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    // HENDERSON_1985_RAW has no prices field, so rawPrice is undefined → null
+    expect(result).toEqual({ price: null });
+  });
+
+  it("returns { price } when match is found on a later page", async () => {
+    const page0Cards = Array.from({ length: 100 }, (_, i) => ({
+      ...HENDERSON_1985_RAW,
+      number: String(i + 1),
+    }));
+    const matchCard = { ...HENDERSON_1985_RAW, number: "695", prices: { raw: "12.50" } };
+
+    mockFetch
+      .mockResolvedValueOnce(mockPage(page0Cards, 200))
+      .mockResolvedValueOnce(mockPage([matchCard], 200));
+
+    const result = await findPriceInCatalog(
+      { player: "Rickey Henderson" },
+      BASE_PARAMS,
+      "test-api-key",
+    );
+
+    expect(result).toEqual({ price: 12.50 });
+  });
+
+  it("returns { price: null } when card is not found on any page", async () => {
+    mockFetch.mockResolvedValueOnce(mockPage([HENDERSON_1986_RAW]));
+
+    const result = await findPriceInCatalog(
+      { player: "Rickey Henderson" },
+      BASE_PARAMS,
+      "test-api-key",
+    );
+
+    expect(result).toEqual({ price: null });
+  });
+
+  it("returns null on API error on first page", async () => {
+    mockFetch.mockResolvedValue({ ok: false, status: 500, text: async () => "error" });
+
+    const result = await findPriceInCatalog(
+      { player: "Rickey Henderson" },
+      BASE_PARAMS,
       "test-api-key",
     );
 

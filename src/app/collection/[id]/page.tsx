@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CardForm, type CardFormData } from "@/components/CardForm";
 import type { Card } from "@/db/schema";
 import { MarketPriceDisplay, type MarketPriceState } from "./MarketPriceDisplay";
+import { ShareToBlueskyModal } from "./ShareToBlueskyModal";
 
 function RotateControls({ onRotate }: { onRotate: (delta: number) => void }) {
   return (
@@ -48,6 +49,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
   const [rotateFront, setRotateFront] = useState(0);
   const [rotateBack, setRotateBack] = useState(0);
   const [marketPrice, setMarketPrice] = useState<MarketPriceState>({ status: "idle" });
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     fetch(`/api/cards/${id}`)
@@ -147,6 +149,14 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{card.playerName}</h1>
         <div className="flex gap-3">
+          {card.imageFront && (
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="rounded-md bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-400"
+            >
+              Share
+            </button>
+          )}
           <button
             onClick={() => setEditing(true)}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
@@ -196,6 +206,14 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
             style={{ transform: `rotate(${lightbox.rotation}deg)` }}
           />
         </div>
+      )}
+
+      {showShareModal && (
+        <ShareToBlueskyModal
+          card={card}
+          rotation={rotateFront}
+          onClose={() => setShowShareModal(false)}
+        />
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_3fr]">
@@ -328,7 +346,11 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
                 {card.playerName && card.year && card.brand && (
                   <div>
                     <p className="text-xs text-gray-500">Market Price</p>
-                    <MarketPriceDisplay state={marketPrice} onFetch={fetchMarketPrice} />
+                    <MarketPriceDisplay
+                      state={marketPrice}
+                      purchasePrice={card.purchasePrice ?? undefined}
+                      onFetch={fetchMarketPrice}
+                    />
                   </div>
                 )}
               </div>

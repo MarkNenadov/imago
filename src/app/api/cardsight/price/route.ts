@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchCatalog, findMatchingPrice } from "@/lib/card-catalog";
+import { findPriceInCatalog } from "@/lib/card-catalog";
 
 export async function GET(request: NextRequest) {
   const apiKey = process.env.CARDSIGHT_API_KEY;
@@ -34,14 +34,18 @@ export async function GET(request: NextRequest) {
   const cardNumber = params.get("cardNumber") ?? undefined;
   const variant = params.get("variant") ?? undefined;
 
-  const catalog = await searchCatalog({ player }, apiKey);
-  if (catalog === null) {
+  const result = await findPriceInCatalog(
+    { player },
+    { year, brand, setName, cardNumber, variant },
+    apiKey,
+  );
+
+  if (result === null) {
     return NextResponse.json(
       { error: "CardSight catalog search failed" },
       { status: 502 },
     );
   }
 
-  const price = findMatchingPrice(catalog, { year, brand, setName, cardNumber, variant });
-  return NextResponse.json({ price });
+  return NextResponse.json(result);
 }
