@@ -10,6 +10,7 @@
     "seed": "bun run scripts/seed-reference-data.ts"
   },
   "dependencies": {
+    "@atproto/api": "^0.19.3",
     "better-sqlite3": "^12.6.2",
     "drizzle-orm": "^0.45.1",
     "next": "16.1.6",
