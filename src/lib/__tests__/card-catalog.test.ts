@@ -26,6 +26,23 @@ const HENDERSON_1986_RAW = {
   number: "500",
 };
 
+// Hockey cards use season strings like "1994-95" instead of plain year numbers
+const GILMOUR_1994_HOCKEY_RAW = {
+  name: "Doug Gilmour",
+  releaseYear: "1994-95",
+  releaseName: "Topps Premier",
+  setName: "Base Set",
+  number: "225",
+};
+
+const GILMOUR_1997_HOCKEY_RAW = {
+  name: "Doug Gilmour",
+  releaseYear: "1997-98",
+  releaseName: "Collector's Choice",
+  setName: "You Crash the Game",
+  number: "C13",
+};
+
 function mockPage(cards: unknown[], totalCount?: number) {
   return {
     ok: true,
@@ -95,6 +112,35 @@ describe("searchCatalog", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].year).toBe(1985);
+  });
+
+  it("parses hockey season year strings (e.g. '1994-95') as the starting year", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockPage([GILMOUR_1994_HOCKEY_RAW, GILMOUR_1997_HOCKEY_RAW]),
+    );
+
+    const result = await searchCatalog(
+      { player: "Doug Gilmour", sport: "hockey" },
+      "test-api-key",
+    );
+
+    expect(result).toHaveLength(2);
+    expect(result![0].year).toBe(1994);
+    expect(result![1].year).toBe(1997);
+  });
+
+  it("filters hockey cards by year range using the parsed starting year", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockPage([GILMOUR_1994_HOCKEY_RAW, GILMOUR_1997_HOCKEY_RAW]),
+    );
+
+    const result = await searchCatalog(
+      { player: "Doug Gilmour", sport: "hockey", yearFrom: 1995, yearTo: 2000 },
+      "test-api-key",
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result![0].year).toBe(1997);
   });
 
   it("returns null on API error", async () => {

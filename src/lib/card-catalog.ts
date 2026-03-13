@@ -47,11 +47,17 @@ export interface CatalogSearchParams {
   sport?: string;
 }
 
+function parseReleaseYear(value: unknown): number | undefined {
+  if (value == null) return undefined;
+  const match = String(value).match(/^(\d{4})/);
+  return match ? Number(match[1]) : undefined;
+}
+
 function mapCard(raw: Record<string, unknown>): CatalogCard {
   const prices = raw.prices as Record<string, string> | undefined;
   return {
     playerName: String(raw.name ?? ""),
-    year: raw.releaseYear ? Number(raw.releaseYear) : undefined,
+    year: parseReleaseYear(raw.releaseYear),
     brand: raw.releaseName ? String(raw.releaseName) : undefined,
     setName: raw.setName ? String(raw.setName) : undefined,
     cardNumber: raw.number ? String(raw.number) : undefined,
