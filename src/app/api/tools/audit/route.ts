@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { listCards } from "@/db/cards";
+import { getMissingFields } from "@/lib/audit";
 
 interface IncompleteCard {
   id: string;
@@ -8,43 +9,13 @@ interface IncompleteCard {
   missing: string[];
 }
 
-const IMPORTANT_FIELDS = [
-  { key: "purchasePrice", label: "Price" },
-  { key: "purchaseDate", label: "Purchase Date" },
-  { key: "team", label: "Team" },
-  { key: "location", label: "Location" },
-  { key: "imageFront", label: "Front Image" },
-] as const;
-
-const POSITION_TAGS = ["batter", "batters", "pitcher", "pitchers", "manager", "managers", "defencemen", "forward", "goalie"];
-
 export async function GET() {
   const db = getDb();
   const allCards = listCards(db);
 
-  const incomplete: IncompleteCard[] = [];
-  for (const card of allCards) {
-    const missing: string[] = [];
-    for (const { key, label } of IMPORTANT_FIELDS) {
-      const value = card[key];
-      if (value == null || value === "") {
-        missing.push(label);
-      }
-    }
-
-    const tags = (card.tags as string[]) ?? [];
-    const hasPositionTag = tags.some((t) => POSITION_TAGS.includes(t.toLowerCase()));
-    if (!hasPositionTag) {
-      missing.push("Position Tag");
-    }
-    if (missing.length > 0) {
-      incomplete.push({
-        id: card.id,
-        playerName: card.playerName,
-        missing,
-      });
-    }
-  }
+  const incomplete: IncompleteCard[] = allCards
+    .map((card) => ({ id: card.id, playerName: card.playerName, missing: getMissingFields(card) }))
+    .filter(({ missing }) => missing.length > 0);
 
   return NextResponse.json({
     totalCards: allCards.length,

@@ -7,6 +7,8 @@ import { CardForm, type CardFormData } from "@/components/CardForm";
 import type { Card } from "@/db/schema";
 import { MarketPriceDisplay, type MarketPriceState } from "./MarketPriceDisplay";
 import { ShareToBlueskyModal } from "./ShareToBlueskyModal";
+import { AuditBanner } from "./AuditBanner";
+import { getMissingFields } from "@/lib/audit";
 
 function RotateControls({ onRotate }: { onRotate: (delta: number) => void }) {
   return (
@@ -171,6 +173,8 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
           </button>
         </div>
       </div>
+
+      <AuditBanner missingFields={getMissingFields(card)} />
 
       {showDeleteConfirm && (
         <div className="mb-6 rounded-md bg-red-50 p-4">
