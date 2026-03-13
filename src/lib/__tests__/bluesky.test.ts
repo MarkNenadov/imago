@@ -68,14 +68,36 @@ describe("buildPostText", () => {
     expect(sportLine).toBe("Baseball");
   });
 
-  it("includes sport hashtag on last line", () => {
+  it("includes sport, brand, and team hashtags on last line", () => {
     const text = buildPostText(makeCard());
-    expect(text.split("\n").at(-1)).toBe("#sportscards #baseball");
+    expect(text.split("\n").at(-1)).toBe(
+      "#sportscards #baseball #upperdeck #seattlemariners",
+    );
   });
 
   it("removes spaces from multi-word sport hashtag", () => {
     const text = buildPostText(makeCard({ sport: "ice hockey" }));
-    expect(text.split("\n").at(-1)).toBe("#sportscards #icehockey");
+    expect(text.split("\n").at(-1)).toContain("#icehockey");
+  });
+
+  it("removes spaces and special chars from brand hashtag", () => {
+    const text = buildPostText(makeCard({ brand: "O-Pee-Chee" }));
+    expect(text.split("\n").at(-1)).toContain("#opeechee");
+  });
+
+  it("removes apostrophes and spaces from team hashtag", () => {
+    const text = buildPostText(makeCard({ team: "Oakland A's" }));
+    expect(text.split("\n").at(-1)).toContain("#oaklandas");
+  });
+
+  it("omits brand hashtag when brand is absent", () => {
+    const text = buildPostText(makeCard({ brand: null }));
+    expect(text.split("\n").at(-1)).not.toContain("#upperdeck");
+  });
+
+  it("omits team hashtag when team is absent", () => {
+    const text = buildPostText(makeCard({ team: null }));
+    expect(text.split("\n").at(-1)).not.toContain("#seattlemariners");
   });
 
   it("omits year when absent", () => {

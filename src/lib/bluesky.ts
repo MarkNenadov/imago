@@ -30,9 +30,17 @@ export function buildPostText(card: Card): string {
   const line3 = [sport, card.team ?? null].filter(Boolean).join(" · ");
   lines.push(line3);
 
-  // Hashtags
-  const sportTag = "#" + card.sport.toLowerCase().replace(/\s+/g, "");
-  lines.push(`#sportscards ${sportTag}`);
+  // Hashtags — strip everything except letters and digits, then lowercase
+  const toHashtag = (value: string) =>
+    "#" + value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  const hashtags = [
+    "#sportscards",
+    toHashtag(card.sport),
+    ...(card.brand ? [toHashtag(card.brand)] : []),
+    ...(card.team ? [toHashtag(card.team)] : []),
+  ];
+  lines.push(hashtags.join(" "));
 
   return lines.join("\n");
 }

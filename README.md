@@ -13,6 +13,8 @@ Note: This app has no authentication currently, and is intended to be used local
 
 - **Card Management** — Add cards with image upload, player details, purchase info, and tags
 - **AI Card Identification** — Upload a card photo and auto-fill details via the [CardSight](https://cardsight.ai/) API
+- **Market Prices** — View current market prices on card detail pages (requires CardSight subscription)
+- **Share to Bluesky** — Share individual cards to Bluesky directly from the card detail page
 - **Collection Browser** — Filter by sport, team, brand, year, and tags. Sort by any column.
 - **Dashboard** — At-a-glance stats (total cards, images, players, invested) and recently added cards
 - **Statistics** — Breakdowns by team, year, brand, decade, entry date, rookie status, and position type
@@ -98,6 +100,8 @@ bun start
 src/
 ├── app/                    # Next.js App Router pages and API routes
 │   ├── api/cards/          # CRUD endpoints for cards
+│   ├── api/bluesky/        # Share cards to Bluesky
+│   ├── api/cardsight/      # CardSight market price lookup
 │   ├── api/identify/       # CardSight AI identification
 │   ├── api/images/         # Image upload
 │   ├── api/stats/          # Collection statistics
