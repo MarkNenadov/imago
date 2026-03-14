@@ -71,7 +71,7 @@ describe("buildPostText", () => {
   it("includes sport, brand, and team hashtags on last line", () => {
     const text = buildPostText(makeCard());
     expect(text.split("\n").at(-1)).toBe(
-      "#sportscards #baseball #upperdeck #seattlemariners",
+      "#sportscards #baseball #upperdeck #seattlemariners #junkwax",
     );
   });
 
@@ -98,6 +98,20 @@ describe("buildPostText", () => {
   it("omits team hashtag when team is absent", () => {
     const text = buildPostText(makeCard({ team: null }));
     expect(text.split("\n").at(-1)).not.toContain("#seattlemariners");
+  });
+
+  it("includes #junkwax hashtag for cards with year in 1987-1994 range", () => {
+    for (const year of [1987, 1990, 1994]) {
+      const text = buildPostText(makeCard({ year }));
+      expect(text.split("\n").at(-1)).toContain("#junkwax");
+    }
+  });
+
+  it("omits #junkwax hashtag for cards outside 1987-1994 range", () => {
+    for (const year of [1986, 1995, 2000, null]) {
+      const text = buildPostText(makeCard({ year }));
+      expect(text.split("\n").at(-1)).not.toContain("#junkwax");
+    }
   });
 
   it("omits year when absent", () => {

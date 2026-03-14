@@ -34,11 +34,15 @@ export function buildPostText(card: Card): string {
   const toHashtag = (value: string) =>
     "#" + value.toLowerCase().replace(/[^a-z0-9]/g, "");
 
+  const isJunkWaxEra =
+    card.year !== null && card.year >= 1987 && card.year <= 1994;
+
   const hashtags = [
     "#sportscards",
     toHashtag(card.sport),
     ...(card.brand ? [toHashtag(card.brand)] : []),
     ...(card.team ? [toHashtag(card.team)] : []),
+    ...(isJunkWaxEra ? ["#junkwax"] : []),
   ];
   lines.push(hashtags.join(" "));
 
