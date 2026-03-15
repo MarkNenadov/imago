@@ -1,5 +1,10 @@
 import type { Card } from "@/db/schema";
 
+const SPORT_CARD_HASHTAGS: Record<string, [string, string]> = {
+  baseball: ["#baseballcard", "#baseballcards"],
+  hockey: ["#hockeycard", "#hockeycards"],
+};
+
 export function buildPostText(card: Card): string {
   const lines: string[] = [];
 
@@ -37,9 +42,12 @@ export function buildPostText(card: Card): string {
   const isJunkWaxEra =
     card.year !== null && card.year >= 1987 && card.year <= 1994;
 
+  const sportCardHashtags = SPORT_CARD_HASHTAGS[card.sport] ?? [];
+
   const hashtags = [
     "#sportscards",
     toHashtag(card.sport),
+    ...sportCardHashtags,
     ...(card.brand ? [toHashtag(card.brand)] : []),
     ...(card.team ? [toHashtag(card.team)] : []),
     ...(isJunkWaxEra ? ["#junkwax"] : []),
