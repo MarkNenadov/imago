@@ -111,7 +111,7 @@ describe("searchCatalog", () => {
     );
 
     expect(result).toHaveLength(1);
-    expect(result[0].year).toBe(1985);
+    expect(result![0].year).toBe(1985);
   });
 
   it("parses hockey season year strings (e.g. '1994-95') as the starting year", async () => {

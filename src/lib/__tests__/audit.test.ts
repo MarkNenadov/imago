@@ -1,16 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { getMissingFields } from "@/lib/audit";
-import type { Card } from "@/db/schema";
+import type { Card, CardPlayer } from "@/db/schema";
 
 function makeCard(overrides: Partial<Card> = {}): Card {
   return {
     id: "1",
-    playerName: "Ken Griffey Jr.",
+    players: [{ name: "Ken Griffey Jr.", team: "Seattle Mariners" }] as CardPlayer[],
     year: 1989,
     brand: "Upper Deck",
     setName: "Base Set",
     cardNumber: "1",
-    team: "Seattle Mariners",
     sport: "baseball",
     variant: null,
     condition: null,
@@ -41,8 +40,16 @@ describe("getMissingFields", () => {
     expect(getMissingFields(makeCard({ purchaseDate: null }))).toContain("Purchase Date");
   });
 
-  it("flags missing team", () => {
-    expect(getMissingFields(makeCard({ team: null }))).toContain("Team");
+  it("flags missing team when no player has a team", () => {
+    expect(getMissingFields(makeCard({ players: [{ name: "Ken Griffey Jr." }] }))).toContain("Team");
+  });
+
+  it("does not flag team when at least one player has a team", () => {
+    const players: CardPlayer[] = [
+      { name: "Player A", team: "Red Sox" },
+      { name: "Player B" },
+    ];
+    expect(getMissingFields(makeCard({ players }))).not.toContain("Team");
   });
 
   it("flags missing location", () => {
@@ -78,7 +85,7 @@ describe("getMissingFields", () => {
   });
 
   it("can return multiple missing fields", () => {
-    const missing = getMissingFields(makeCard({ purchasePrice: null, team: null, tags: [] }));
+    const missing = getMissingFields(makeCard({ purchasePrice: null, players: [{ name: "Ken Griffey Jr." }], tags: [] }));
     expect(missing).toContain("Price");
     expect(missing).toContain("Team");
     expect(missing).toContain("Position Tag");

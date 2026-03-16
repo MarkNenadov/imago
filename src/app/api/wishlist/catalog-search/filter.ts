@@ -1,6 +1,7 @@
 import { listCards } from "@/db/cards";
 import { listWishlistItems } from "@/db/wishlist";
 import type { CatalogCard } from "@/lib/card-catalog";
+import type { CardPlayer } from "@/db/schema";
 import type { getDb } from "@/db";
 
 type DrizzleDb = ReturnType<typeof getDb>;
@@ -19,7 +20,11 @@ function isMatch(
 }
 
 export function filterCatalogGaps(db: DrizzleDb, catalog: CatalogCard[]): CatalogCard[] {
-  const ownedCards = listCards(db);
+  const ownedCards = listCards(db).map((c) => ({
+    playerName: (c.players as CardPlayer[])[0]?.name ?? "",
+    year: c.year,
+    cardNumber: c.cardNumber,
+  }));
   const wishlist = listWishlistItems(db);
 
   return catalog.filter(

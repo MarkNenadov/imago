@@ -4,7 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CardForm, type CardFormData } from "@/components/CardForm";
-import type { Card } from "@/db/schema";
+import type { Card, CardPlayer } from "@/db/schema";
 import { MarketPriceDisplay, type MarketPriceState } from "./MarketPriceDisplay";
 import { ShareToBlueskyModal } from "./ShareToBlueskyModal";
 import { AuditBanner } from "./AuditBanner";
@@ -87,7 +87,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
     setMarketPrice({ status: "loading" });
 
     const params = new URLSearchParams({
-      player: card.playerName,
+      player: (card.players as CardPlayer[])[0]?.name ?? "",
       year: String(card.year),
       brand: card.brand!,
     });
@@ -149,7 +149,9 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
   return (
     <div>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{card.playerName}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {(card.players as CardPlayer[]).map((p) => p.name).join(" / ")}
+        </h1>
         <div className="flex gap-3">
           {card.imageFront && (
             <button
@@ -227,7 +229,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
             <div>
               <img
                 src={card.imageFront}
-                alt={`${card.playerName} front`}
+                alt={`${(card.players as CardPlayer[])[0]?.name ?? "Card"} front`}
                 className="w-3/4 cursor-zoom-in rounded-lg shadow-sm transition-transform duration-200"
                 style={{ transform: `rotate(${rotateFront}deg)` }}
                 onClick={() => setLightbox({ src: card.imageFront!, rotation: rotateFront })}
@@ -243,7 +245,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
             <div>
               <img
                 src={card.imageBack}
-                alt={`${card.playerName} back`}
+                alt={`${(card.players as CardPlayer[])[0]?.name ?? "Card"} back`}
                 className="w-3/4 cursor-zoom-in rounded-lg shadow-sm transition-transform duration-200"
                 style={{ transform: `rotate(${rotateBack}deg)` }}
                 onClick={() => setLightbox({ src: card.imageBack!, rotation: rotateBack })}
@@ -275,17 +277,20 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
                 <p className="text-xs text-gray-500">Sport</p>
                 <p className="text-sm font-medium text-gray-900">{card.sport}</p>
               </div>
-              {card.team && (
-                <div>
-                  <p className="text-xs text-gray-500">Team</p>
-                  <Link
-                    href={`/collection?team=${encodeURIComponent(card.team)}`}
-                    className="text-sm font-medium text-blue-600 hover:underline"
-                  >
-                    {card.team}
-                  </Link>
+              {(card.players as CardPlayer[]).map((player, i) => (
+                <div key={i}>
+                  <p className="text-xs text-gray-500">{i === 0 ? "Player" : `Player ${i + 1}`}</p>
+                  <p className="text-sm font-medium text-gray-900">{player.name}</p>
+                  {player.team && (
+                    <Link
+                      href={`/collection?team=${encodeURIComponent(player.team)}`}
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      {player.team}
+                    </Link>
+                  )}
                 </div>
-              )}
+              ))}
               {card.setName && (
                 <div>
                   <p className="text-xs text-gray-500">Set</p>
@@ -314,7 +319,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
           </div>
 
           {/* Purchase & Location */}
-          {(card.purchasePrice != null || card.purchaseDate || card.purchaseSource || card.location || (card.playerName && card.year && card.brand)) && (
+          {(card.purchasePrice != null || card.purchaseDate || card.purchaseSource || card.location || ((card.players as CardPlayer[])[0]?.name && card.year && card.brand)) && (
             <div className="rounded-lg border border-gray-200 bg-white p-4">
               <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Purchase & Location</h2>
               <div className="grid grid-cols-3 gap-3">
@@ -347,7 +352,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
                     </Link>
                   </div>
                 )}
-                {card.playerName && card.year && card.brand && (
+                {(card.players as CardPlayer[])[0]?.name && card.year && card.brand && (
                   <div>
                     <p className="text-xs text-gray-500">Market Price</p>
                     <MarketPriceDisplay

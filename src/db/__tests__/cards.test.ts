@@ -9,6 +9,7 @@ import {
   renameTag,
   renameLocation,
 } from "@/db/cards";
+import type { CardPlayer } from "@/db/schema";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 
 function freshDb() {
@@ -18,12 +19,11 @@ function freshDb() {
 }
 
 const sampleCard = {
-  playerName: "Mike Trout",
+  players: [{ name: "Mike Trout", team: "Angels" }] as CardPlayer[],
   year: 2023,
   brand: "Topps",
   setName: "Chrome",
   cardNumber: "1",
-  team: "Angels",
   sport: "baseball" as const,
   variant: "Refractor",
   purchasePrice: 25.0,
@@ -37,7 +37,7 @@ describe("createCard", () => {
     const card = createCard(db, sampleCard);
 
     expect(card.id).toBeDefined();
-    expect(card.playerName).toBe("Mike Trout");
+    expect((card.players as CardPlayer[])[0].name).toBe("Mike Trout");
     expect(card.year).toBe(2023);
     expect(card.tags).toEqual(["PC", "rookie"]);
   });
@@ -50,7 +50,7 @@ describe("getCardById", () => {
     const found = getCardById(db, created.id);
 
     expect(found).toBeDefined();
-    expect(found!.playerName).toBe("Mike Trout");
+    expect((found!.players as CardPlayer[])[0].name).toBe("Mike Trout");
   });
 
   it("should return undefined for non-existent id", () => {
@@ -65,7 +65,7 @@ describe("listCards", () => {
   it("should return all cards", () => {
     const db = freshDb();
     createCard(db, sampleCard);
-    createCard(db, { ...sampleCard, playerName: "Shohei Ohtani" });
+    createCard(db, { ...sampleCard, players: [{ name: "Shohei Ohtani" }] });
 
     const all = listCards(db);
     expect(all).toHaveLength(2);
@@ -74,17 +74,17 @@ describe("listCards", () => {
   it("should filter by sport", () => {
     const db = freshDb();
     createCard(db, sampleCard);
-    createCard(db, { ...sampleCard, playerName: "Connor McDavid", sport: "hockey" });
+    createCard(db, { ...sampleCard, players: [{ name: "Connor McDavid" }], sport: "hockey" });
 
     const baseball = listCards(db, { sport: "baseball" });
     expect(baseball).toHaveLength(1);
-    expect(baseball[0].playerName).toBe("Mike Trout");
+    expect((baseball[0].players as CardPlayer[])[0].name).toBe("Mike Trout");
   });
 
   it("should filter by location", () => {
     const db = freshDb();
     createCard(db, sampleCard);
-    createCard(db, { ...sampleCard, playerName: "Ohtani", location: "Box 2" });
+    createCard(db, { ...sampleCard, players: [{ name: "Ohtani" }], location: "Box 2" });
 
     const box1 = listCards(db, { location: "Box 1" });
     expect(box1).toHaveLength(1);
@@ -93,22 +93,24 @@ describe("listCards", () => {
   it("should filter by tag", () => {
     const db = freshDb();
     createCard(db, { ...sampleCard, tags: ["PC", "rookie"] });
-    createCard(db, { ...sampleCard, playerName: "Ohtani", tags: ["auto"] });
-    createCard(db, { ...sampleCard, playerName: "Judge", tags: ["PC", "auto"] });
+    createCard(db, { ...sampleCard, players: [{ name: "Ohtani" }], tags: ["auto"] });
+    createCard(db, { ...sampleCard, players: [{ name: "Judge" }], tags: ["PC", "auto"] });
 
     const pcCards = listCards(db, { tag: "PC" });
     expect(pcCards).toHaveLength(2);
-    expect(pcCards.map((c) => c.playerName).sort()).toEqual(["Judge", "Mike Trout"]);
+    const names = pcCards.map((c) => (c.players as CardPlayer[])[0].name).sort();
+    expect(names).toEqual(["Judge", "Mike Trout"]);
 
     const autoCards = listCards(db, { tag: "auto" });
     expect(autoCards).toHaveLength(2);
-    expect(autoCards.map((c) => c.playerName).sort()).toEqual(["Judge", "Ohtani"]);
+    const autoNames = autoCards.map((c) => (c.players as CardPlayer[])[0].name).sort();
+    expect(autoNames).toEqual(["Judge", "Ohtani"]);
   });
 
   it("should sort by purchase price descending", () => {
     const db = freshDb();
     createCard(db, { ...sampleCard, purchasePrice: 10 });
-    createCard(db, { ...sampleCard, playerName: "Ohtani", purchasePrice: 50 });
+    createCard(db, { ...sampleCard, players: [{ name: "Ohtani" }], purchasePrice: 50 });
 
     const sorted = listCards(db, { sortBy: "purchasePrice", sortOrder: "desc" });
     expect(sorted[0].purchasePrice).toBe(50);
@@ -116,9 +118,9 @@ describe("listCards", () => {
 
   it("should sort nulls last when sorting by purchase price ascending", () => {
     const db = freshDb();
-    createCard(db, { ...sampleCard, playerName: "NullPrice", purchasePrice: undefined });
-    createCard(db, { ...sampleCard, playerName: "LowPrice", purchasePrice: 0.02 });
-    createCard(db, { ...sampleCard, playerName: "HighPrice", purchasePrice: 50 });
+    createCard(db, { ...sampleCard, players: [{ name: "NullPrice" }], purchasePrice: undefined });
+    createCard(db, { ...sampleCard, players: [{ name: "LowPrice" }], purchasePrice: 0.02 });
+    createCard(db, { ...sampleCard, players: [{ name: "HighPrice" }], purchasePrice: 50 });
 
     const sorted = listCards(db, { sortBy: "purchasePrice", sortOrder: "asc" });
     expect(sorted[0].purchasePrice).toBe(0.02);
@@ -128,9 +130,9 @@ describe("listCards", () => {
 
   it("should sort nulls last when sorting by purchase price descending", () => {
     const db = freshDb();
-    createCard(db, { ...sampleCard, playerName: "NullPrice", purchasePrice: undefined });
-    createCard(db, { ...sampleCard, playerName: "LowPrice", purchasePrice: 0.02 });
-    createCard(db, { ...sampleCard, playerName: "HighPrice", purchasePrice: 50 });
+    createCard(db, { ...sampleCard, players: [{ name: "NullPrice" }], purchasePrice: undefined });
+    createCard(db, { ...sampleCard, players: [{ name: "LowPrice" }], purchasePrice: 0.02 });
+    createCard(db, { ...sampleCard, players: [{ name: "HighPrice" }], purchasePrice: 50 });
 
     const sorted = listCards(db, { sortBy: "purchasePrice", sortOrder: "desc" });
     expect(sorted[0].purchasePrice).toBe(50);
@@ -143,11 +145,11 @@ describe("listCards with q (text search)", () => {
   it("should search by player name", () => {
     const db = freshDb();
     createCard(db, sampleCard);
-    createCard(db, { ...sampleCard, playerName: "Shohei Ohtani" });
+    createCard(db, { ...sampleCard, players: [{ name: "Shohei Ohtani" }] });
 
     const results = listCards(db, { q: "trout" });
     expect(results).toHaveLength(1);
-    expect(results[0].playerName).toBe("Mike Trout");
+    expect((results[0].players as CardPlayer[])[0].name).toBe("Mike Trout");
   });
 
   it("should search across multiple fields", () => {
@@ -160,13 +162,40 @@ describe("listCards with q (text search)", () => {
 
   it("should combine text search with tag filter", () => {
     const db = freshDb();
-    createCard(db, { ...sampleCard, playerName: "Mike Trout", tags: ["PC", "rookie"] });
-    createCard(db, { ...sampleCard, playerName: "Mike Schmidt", tags: ["HOF"] });
-    createCard(db, { ...sampleCard, playerName: "Shohei Ohtani", tags: ["PC"] });
+    createCard(db, { ...sampleCard, players: [{ name: "Mike Trout" }], tags: ["PC", "rookie"] });
+    createCard(db, { ...sampleCard, players: [{ name: "Mike Schmidt" }], tags: ["HOF"] });
+    createCard(db, { ...sampleCard, players: [{ name: "Shohei Ohtani" }], tags: ["PC"] });
 
     const results = listCards(db, { q: "Mike", tag: "PC" });
     expect(results).toHaveLength(1);
-    expect(results[0].playerName).toBe("Mike Trout");
+    expect((results[0].players as CardPlayer[])[0].name).toBe("Mike Trout");
+  });
+
+  it("should filter by team via players array", () => {
+    const db = freshDb();
+    createCard(db, { ...sampleCard, players: [{ name: "Mike Trout", team: "Angels" }] });
+    createCard(db, { ...sampleCard, players: [{ name: "Shohei Ohtani", team: "Dodgers" }] });
+
+    const results = listCards(db, { team: "Angels" });
+    expect(results).toHaveLength(1);
+    expect((results[0].players as CardPlayer[])[0].name).toBe("Mike Trout");
+  });
+
+  it("should find multi-player card when filtering by any player's team", () => {
+    const db = freshDb();
+    createCard(db, {
+      ...sampleCard,
+      players: [
+        { name: "Mike Trout", team: "Angels" },
+        { name: "Shohei Ohtani", team: "Dodgers" },
+      ],
+    });
+
+    const byAngels = listCards(db, { team: "Angels" });
+    expect(byAngels).toHaveLength(1);
+
+    const byDodgers = listCards(db, { team: "Dodgers" });
+    expect(byDodgers).toHaveLength(1);
   });
 });
 
@@ -178,24 +207,24 @@ describe("updateCard", () => {
     const updated = updateCard(db, card.id, { location: "Box 5", purchasePrice: 30 });
     expect(updated!.location).toBe("Box 5");
     expect(updated!.purchasePrice).toBe(30);
-    expect(updated!.playerName).toBe("Mike Trout");
+    expect((updated!.players as CardPlayer[])[0].name).toBe("Mike Trout");
   });
 });
 
 describe("renameTag", () => {
   it("should rename a tag on all cards that have it", () => {
     const db = freshDb();
-    createCard(db, { ...sampleCard, playerName: "Trout", tags: ["first basemen", "PC"] });
-    createCard(db, { ...sampleCard, playerName: "Ohtani", tags: ["first basemen"] });
-    createCard(db, { ...sampleCard, playerName: "Judge", tags: ["PC"] });
+    createCard(db, { ...sampleCard, players: [{ name: "Trout" }], tags: ["first basemen", "PC"] });
+    createCard(db, { ...sampleCard, players: [{ name: "Ohtani" }], tags: ["first basemen"] });
+    createCard(db, { ...sampleCard, players: [{ name: "Judge" }], tags: ["PC"] });
 
     const updated = renameTag(db, "first basemen", "1b");
     expect(updated).toBe(2);
 
     const all = listCards(db);
-    const trout = all.find((c) => c.playerName === "Trout")!;
-    const ohtani = all.find((c) => c.playerName === "Ohtani")!;
-    const judge = all.find((c) => c.playerName === "Judge")!;
+    const trout = all.find((c) => (c.players as CardPlayer[])[0].name === "Trout")!;
+    const ohtani = all.find((c) => (c.players as CardPlayer[])[0].name === "Ohtani")!;
+    const judge = all.find((c) => (c.players as CardPlayer[])[0].name === "Judge")!;
 
     expect(trout.tags).toEqual(["PC", "1b"]);
     expect(ohtani.tags).toEqual(["1b"]);
@@ -225,17 +254,17 @@ describe("renameTag", () => {
 describe("renameLocation", () => {
   it("should rename location on all matching cards", () => {
     const db = freshDb();
-    createCard(db, { ...sampleCard, playerName: "Trout", location: "Box 1" });
-    createCard(db, { ...sampleCard, playerName: "Ohtani", location: "Box 1" });
-    createCard(db, { ...sampleCard, playerName: "Judge", location: "Box 2" });
+    createCard(db, { ...sampleCard, players: [{ name: "Trout" }], location: "Box 1" });
+    createCard(db, { ...sampleCard, players: [{ name: "Ohtani" }], location: "Box 1" });
+    createCard(db, { ...sampleCard, players: [{ name: "Judge" }], location: "Box 2" });
 
     const updated = renameLocation(db, "Box 1", "Binder A");
     expect(updated).toBe(2);
 
     const all = listCards(db);
-    const trout = all.find((c) => c.playerName === "Trout")!;
-    const ohtani = all.find((c) => c.playerName === "Ohtani")!;
-    const judge = all.find((c) => c.playerName === "Judge")!;
+    const trout = all.find((c) => (c.players as CardPlayer[])[0].name === "Trout")!;
+    const ohtani = all.find((c) => (c.players as CardPlayer[])[0].name === "Ohtani")!;
+    const judge = all.find((c) => (c.players as CardPlayer[])[0].name === "Judge")!;
 
     expect(trout.location).toBe("Binder A");
     expect(ohtani.location).toBe("Binder A");

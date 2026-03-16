@@ -41,7 +41,7 @@ describe("CardForm", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
-        playerName: "Mike Trout",
+        players: [{ name: "Mike Trout" }],
         year: 2023,
         brand: "Topps",
       }),
@@ -60,7 +60,7 @@ describe("CardForm", () => {
     render(
       <CardForm
         onSubmit={vi.fn()}
-        initialValues={{ playerName: "Ohtani", year: 2024, brand: "Topps" }}
+        initialValues={{ players: [{ name: "Ohtani" }], year: 2024, brand: "Topps" }}
       />,
     );
 

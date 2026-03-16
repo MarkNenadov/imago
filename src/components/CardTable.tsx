@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Card } from "@/db/schema";
+import type { Card, CardPlayer } from "@/db/schema";
 
 interface CardTableProps {
   cards: Card[];
@@ -27,21 +27,26 @@ export function CardTable({ cards }: CardTableProps) {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200 bg-white">
-          {cards.map((card) => (
-            <tr key={card.id} className="hover:bg-gray-50">
-              <td className="px-4 py-3">
-                <Link href={`/collection/${card.id}`} className="font-medium text-blue-600 hover:underline">
-                  {card.playerName}
-                </Link>
-              </td>
-              <td className="px-4 py-3 text-sm text-gray-500">{card.year}</td>
-              <td className="px-4 py-3 text-sm text-gray-500">{card.brand}</td>
-              <td className="px-4 py-3 text-sm text-gray-500">{card.team}</td>
-              <td className="px-4 py-3 text-sm text-gray-500">
-                {card.purchasePrice != null ? `$${card.purchasePrice.toFixed(2)}` : "--"}
-              </td>
-            </tr>
-          ))}
+          {cards.map((card) => {
+            const players = (card.players as CardPlayer[]) ?? [];
+            const playerNames = players.map((p) => p.name).join(" / ");
+            const teams = [...new Set(players.map((p) => p.team).filter(Boolean))].join(" / ");
+            return (
+              <tr key={card.id} className="hover:bg-gray-50">
+                <td className="px-4 py-3">
+                  <Link href={`/collection/${card.id}`} className="font-medium text-blue-600 hover:underline">
+                    {playerNames}
+                  </Link>
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-500">{card.year}</td>
+                <td className="px-4 py-3 text-sm text-gray-500">{card.brand}</td>
+                <td className="px-4 py-3 text-sm text-gray-500">{teams}</td>
+                <td className="px-4 py-3 text-sm text-gray-500">
+                  {card.purchasePrice != null ? `$${card.purchasePrice.toFixed(2)}` : "--"}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

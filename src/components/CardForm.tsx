@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react";
 import { ImageUpload } from "./ImageUpload";
 import { getTeamsForSport } from "@/lib/teams";
+import type { CardPlayer } from "@/db/schema";
 
 export interface CardFormData {
-  playerName: string;
+  players: CardPlayer[];
   year?: number;
   brand?: string;
   setName?: string;
   cardNumber?: string;
-  team?: string;
   sport: string;
   variant?: string;
   condition?: string;
@@ -31,6 +31,10 @@ interface CardFormProps {
   submitting?: boolean;
 }
 
+function emptyPlayer(): CardPlayer {
+  return { name: "" };
+}
+
 export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps) {
   const [mounted, setMounted] = useState(false);
   const [locations, setLocations] = useState<string[]>([]);
@@ -43,13 +47,16 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
       .catch(() => {});
   }, []);
 
+  const initialPlayers = initialValues?.players?.length
+    ? initialValues.players
+    : [emptyPlayer()];
+
   const [formData, setFormData] = useState<CardFormData>({
-    playerName: initialValues?.playerName ?? "",
+    players: initialPlayers,
     year: initialValues?.year,
     brand: initialValues?.brand ?? "",
     setName: initialValues?.setName ?? "",
     cardNumber: initialValues?.cardNumber ?? "",
-    team: initialValues?.team ?? "",
     sport: initialValues?.sport ?? "baseball",
     variant: initialValues?.variant ?? "",
     condition: initialValues?.condition ?? "",
@@ -78,15 +85,21 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
       const response = await fetch("/api/identify", { method: "POST", body });
       if (!response.ok) return;
       const result = await response.json();
-      setFormData((prev) => ({
-        ...prev,
-        playerName: result.playerName || prev.playerName,
-        year: result.year ?? prev.year,
-        brand: result.brand || prev.brand,
-        setName: result.setName || prev.setName,
-        cardNumber: result.cardNumber || prev.cardNumber,
-        variant: result.variant || prev.variant,
-      }));
+      setFormData((prev) => {
+        const updatedPlayers = [...prev.players];
+        if (result.playerName) {
+          updatedPlayers[0] = { ...updatedPlayers[0], name: result.playerName };
+        }
+        return {
+          ...prev,
+          players: updatedPlayers,
+          year: result.year ?? prev.year,
+          brand: result.brand || prev.brand,
+          setName: result.setName || prev.setName,
+          cardNumber: result.cardNumber || prev.cardNumber,
+          variant: result.variant || prev.variant,
+        };
+      });
       if (result.setName || result.cardNumber || result.variant) {
         setShowMore(true);
       }
@@ -99,8 +112,8 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
-    if (!formData.playerName.trim()) {
-      newErrors.playerName = "Player name is required";
+    if (!formData.players[0]?.name?.trim()) {
+      newErrors.players = "At least one player name is required";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -109,11 +122,31 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
-    onSubmit(formData);
+    const cleanedPlayers = formData.players.filter((p) => p.name.trim());
+    onSubmit({ ...formData, players: cleanedPlayers });
   }
 
   function updateField<K extends keyof CardFormData>(key: K, value: CardFormData[K]) {
     setFormData((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function updatePlayer(index: number, field: keyof CardPlayer, value: string) {
+    setFormData((prev) => {
+      const updated = [...prev.players];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, players: updated };
+    });
+  }
+
+  function addPlayer() {
+    setFormData((prev) => ({ ...prev, players: [...prev.players, emptyPlayer()] }));
+  }
+
+  function removePlayer(index: number) {
+    setFormData((prev) => ({
+      ...prev,
+      players: prev.players.filter((_, i) => i !== index),
+    }));
   }
 
   function addTag() {
@@ -185,23 +218,70 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
       {/* Card Details */}
       <section>
         <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Card Details</h2>
-        <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
-          <div>
-            <label htmlFor="playerName" className="block text-sm font-medium text-gray-700">
-              Player Name
-            </label>
-            <input
-              id="playerName"
-              type="text"
-              value={formData.playerName ?? ""}
-              onChange={(e) => updateField("playerName", e.target.value)}
-              className="block h-10 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            />
-            {errors.playerName && (
-              <p className="mt-1 text-sm text-red-600">{errors.playerName}</p>
-            )}
-          </div>
 
+        {/* Players */}
+        <div className="mb-2 space-y-2">
+          {formData.players.map((player, index) => (
+            <div key={index} className="grid grid-cols-[1fr_auto_auto] items-end gap-x-2 sm:grid-cols-[1fr_1fr_auto]">
+              <div>
+                {index === 0 && (
+                  <label htmlFor="player-name-0" className="block text-sm font-medium text-gray-700">
+                    Player Name
+                  </label>
+                )}
+                <input
+                  id={`player-name-${index}`}
+                  type="text"
+                  value={player.name}
+                  onChange={(e) => updatePlayer(index, "name", e.target.value)}
+                  placeholder={index === 0 ? "" : "Player name"}
+                  className="block h-10 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                />
+              </div>
+              <div>
+                {index === 0 && (
+                  <label className="block text-sm font-medium text-gray-700">
+                    Team
+                  </label>
+                )}
+                <select
+                  value={player.team ?? ""}
+                  onChange={(e) => updatePlayer(index, "team", e.target.value)}
+                  className="block h-10 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                >
+                  <option value="">--</option>
+                  {getTeamsForSport(formData.sport).map((team) => (
+                    <option key={team} value={team}>{team}</option>
+                  ))}
+                </select>
+              </div>
+              {index > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => removePlayer(index)}
+                  className="mb-0.5 flex h-10 items-center px-2 text-gray-400 hover:text-red-500"
+                  title="Remove player"
+                >
+                  ×
+                </button>
+              ) : (
+                <div className="h-10" />
+              )}
+            </div>
+          ))}
+          {errors.players && (
+            <p className="text-sm text-red-600">{errors.players}</p>
+          )}
+          <button
+            type="button"
+            onClick={addPlayer}
+            className="text-xs text-blue-600 hover:text-blue-800"
+          >
+            + Add player
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
           <div>
             <label htmlFor="year" className="block text-sm font-medium text-gray-700">
               Year
@@ -226,23 +306,6 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
               onChange={(e) => updateField("brand", e.target.value)}
               className="block h-10 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
-          </div>
-
-          <div>
-            <label htmlFor="team" className="block text-sm font-medium text-gray-700">
-              Team
-            </label>
-            <select
-              id="team"
-              value={formData.team ?? ""}
-              onChange={(e) => updateField("team", e.target.value)}
-              className="block h-10 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            >
-              <option value="">--</option>
-              {getTeamsForSport(formData.sport).map((team) => (
-                <option key={team} value={team}>{team}</option>
-              ))}
-            </select>
           </div>
 
           <div>

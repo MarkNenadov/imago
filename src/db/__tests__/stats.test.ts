@@ -23,9 +23,9 @@ describe("getCollectionStats", () => {
 
   it("should derive decade from card year, not just tags", () => {
     const db = freshDb();
-    createCard(db, { playerName: "Trout", sport: "baseball", year: 2020 });
-    createCard(db, { playerName: "Ripken", sport: "baseball", year: 1990 });
-    createCard(db, { playerName: "Ruth", sport: "baseball", year: 1930 });
+    createCard(db, { players: [{ name: "Trout" }], sport: "baseball", year: 2020 });
+    createCard(db, { players: [{ name: "Ripken" }], sport: "baseball", year: 1990 });
+    createCard(db, { players: [{ name: "Ruth" }], sport: "baseball", year: 1930 });
 
     const stats = getCollectionStats(db);
 
@@ -37,10 +37,10 @@ describe("getCollectionStats", () => {
 
   it("should count hockey positions in batterVsPitcher", () => {
     const db = freshDb();
-    createCard(db, { playerName: "McDavid", sport: "hockey", tags: ["forward"] });
-    createCard(db, { playerName: "Crosby", sport: "hockey", tags: ["forward"] });
-    createCard(db, { playerName: "Pronger", sport: "hockey", tags: ["defencemen"] });
-    createCard(db, { playerName: "Roy", sport: "hockey", tags: ["goalie"] });
+    createCard(db, { players: [{ name: "McDavid" }], sport: "hockey", tags: ["forward"] });
+    createCard(db, { players: [{ name: "Crosby" }], sport: "hockey", tags: ["forward"] });
+    createCard(db, { players: [{ name: "Pronger" }], sport: "hockey", tags: ["defencemen"] });
+    createCard(db, { players: [{ name: "Roy" }], sport: "hockey", tags: ["goalie"] });
 
     const stats = getCollectionStats(db);
 
@@ -52,9 +52,9 @@ describe("getCollectionStats", () => {
 
   it("should calculate stats correctly", () => {
     const db = freshDb();
-    createCard(db, { playerName: "Trout", sport: "baseball", purchasePrice: 25, location: "Box 1" });
-    createCard(db, { playerName: "Ohtani", sport: "baseball", purchasePrice: 50, location: "Box 2" });
-    createCard(db, { playerName: "McDavid", sport: "hockey", purchasePrice: 30, location: "Box 1" });
+    createCard(db, { players: [{ name: "Trout", team: "Angels" }], sport: "baseball", purchasePrice: 25, location: "Box 1" });
+    createCard(db, { players: [{ name: "Ohtani", team: "Dodgers" }], sport: "baseball", purchasePrice: 50, location: "Box 2" });
+    createCard(db, { players: [{ name: "McDavid" }], sport: "hockey", purchasePrice: 30, location: "Box 1" });
 
     const stats = getCollectionStats(db);
 
@@ -62,5 +62,20 @@ describe("getCollectionStats", () => {
     expect(stats.totalInvested).toBe(105);
     expect(stats.bySport).toEqual({ baseball: 2, hockey: 1 });
     expect(stats.byLocation).toEqual({ "Box 1": 2, "Box 2": 1 });
+  });
+
+  it("should aggregate teams across all players on a card", () => {
+    const db = freshDb();
+    createCard(db, {
+      players: [
+        { name: "Trout", team: "Angels" },
+        { name: "Ohtani", team: "Dodgers" },
+      ],
+      sport: "baseball",
+    });
+
+    const stats = getCollectionStats(db);
+    expect(stats.byTeam["Angels"]).toBe(1);
+    expect(stats.byTeam["Dodgers"]).toBe(1);
   });
 });

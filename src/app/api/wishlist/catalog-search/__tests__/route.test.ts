@@ -28,7 +28,7 @@ describe("filterCatalogGaps", () => {
   it("excludes cards already in the collection", () => {
     const db = freshDb();
     createCard(db, {
-      playerName: "Rickey Henderson",
+      players: [{ name: "Rickey Henderson" }],
       year: 1982,
       brand: "Topps",
       cardNumber: "610",
@@ -55,7 +55,7 @@ describe("filterCatalogGaps", () => {
   it("excludes cards in both collection and wishlist", () => {
     const db = freshDb();
     createCard(db, {
-      playerName: "Rickey Henderson",
+      players: [{ name: "Rickey Henderson" }],
       year: 1982,
       brand: "Topps",
       cardNumber: "610",

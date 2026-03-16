@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { listCards } from "@/db/cards";
+import type { CardPlayer } from "@/db/schema";
 
 const CSV_COLUMNS = [
   "Player Name",
@@ -31,14 +32,17 @@ export async function GET() {
   const allCards = listCards(db);
 
   const rows = allCards.map((card) => {
+    const players = (card.players as CardPlayer[]) ?? [];
+    const playerName = players.map((p) => p.name).join(" / ");
+    const teams = [...new Set(players.map((p) => p.team).filter(Boolean))].join(" / ");
     const tags = Array.isArray(card.tags) ? (card.tags as string[]).join("; ") : "";
     return [
-      card.playerName,
+      playerName,
       card.year != null ? String(card.year) : "",
       card.brand ?? "",
       card.setName ?? "",
       card.cardNumber ?? "",
-      card.team ?? "",
+      teams,
       card.sport,
       card.condition ?? "",
       card.purchasePrice != null ? card.purchasePrice.toFixed(2) : "",

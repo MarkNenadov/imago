@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { listCards, updateCard } from "@/db/cards";
+import type { CardPlayer } from "@/db/schema";
 import { isHallOfFamer, normalizePlayerName } from "@/lib/hall-of-fame";
 
 interface TagFix {
@@ -47,14 +48,21 @@ export async function GET() {
   const tagFixes: TagFix[] = [];
   const nameFixes: NameFix[] = [];
   for (const card of allCards) {
-    const normalized = normalizePlayerName(card.playerName);
-    if (normalized !== card.playerName) {
-      nameFixes.push({ cardId: card.id, oldName: card.playerName, newName: normalized });
+    const players = (card.players as CardPlayer[]) ?? [];
+    const updatedPlayers = players.map((p) => ({ ...p, name: normalizePlayerName(p.name) }));
+
+    for (let i = 0; i < players.length; i++) {
+      if (updatedPlayers[i].name !== players[i].name) {
+        nameFixes.push({ cardId: card.id, oldName: players[i].name, newName: updatedPlayers[i].name });
+      }
     }
+
     const tags = (card.tags as string[]) ?? [];
-    const missing = findMissingTags(normalized, card.year, tags);
-    for (const tag of missing) {
-      tagFixes.push({ cardId: card.id, playerName: normalized, addedTag: tag });
+    for (const player of updatedPlayers) {
+      const missing = findMissingTags(player.name, card.year, tags);
+      for (const tag of missing) {
+        tagFixes.push({ cardId: card.id, playerName: player.name, addedTag: tag });
+      }
     }
   }
 
@@ -68,19 +76,31 @@ export async function POST() {
   const tagFixes: TagFix[] = [];
   const nameFixes: NameFix[] = [];
   for (const card of allCards) {
-    const normalized = normalizePlayerName(card.playerName);
-    if (normalized !== card.playerName) {
-      updateCard(db, card.id, { playerName: normalized });
-      nameFixes.push({ cardId: card.id, oldName: card.playerName, newName: normalized });
-    }
-    const tags = (card.tags as string[]) ?? [];
-    const missing = findMissingTags(normalized, card.year, tags);
-    if (missing.length > 0) {
-      const updatedTags = [...tags, ...missing];
-      updateCard(db, card.id, { tags: updatedTags });
-      for (const tag of missing) {
-        tagFixes.push({ cardId: card.id, playerName: normalized, addedTag: tag });
+    const players = (card.players as CardPlayer[]) ?? [];
+    const updatedPlayers = players.map((p) => ({ ...p, name: normalizePlayerName(p.name) }));
+
+    let nameChanged = false;
+    for (let i = 0; i < players.length; i++) {
+      if (updatedPlayers[i].name !== players[i].name) {
+        nameFixes.push({ cardId: card.id, oldName: players[i].name, newName: updatedPlayers[i].name });
+        nameChanged = true;
       }
+    }
+    if (nameChanged) {
+      updateCard(db, card.id, { players: updatedPlayers });
+    }
+
+    const tags = (card.tags as string[]) ?? [];
+    const allMissing: string[] = [];
+    for (const player of updatedPlayers) {
+      const missing = findMissingTags(player.name, card.year, tags);
+      for (const tag of missing) {
+        if (!allMissing.includes(tag)) allMissing.push(tag);
+        tagFixes.push({ cardId: card.id, playerName: player.name, addedTag: tag });
+      }
+    }
+    if (allMissing.length > 0) {
+      updateCard(db, card.id, { tags: [...tags, ...allMissing] });
     }
   }
 

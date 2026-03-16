@@ -6,6 +6,7 @@ import { getDb } from "@/db";
 import { listCards } from "@/db/cards";
 import { blurScore, noiseScore, backgroundScore } from "@/lib/photo-quality";
 import type { ChannelStats } from "@/lib/photo-quality";
+import type { CardPlayer } from "@/db/schema";
 
 export interface FlaggedCard {
   cardId: string;
@@ -172,7 +173,7 @@ export async function GET() {
           if (issues.length > 0) {
             return {
               cardId: card.id,
-              playerName: card.playerName,
+              playerName: (card.players as CardPlayer[])[0]?.name ?? "",
               year: card.year ?? null,
               brand: card.brand ?? null,
               imageType: type,

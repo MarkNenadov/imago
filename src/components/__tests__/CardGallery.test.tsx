@@ -6,7 +6,7 @@ import type { Card } from "@/db/schema";
 const mockCards: Partial<Card>[] = [
   {
     id: "1",
-    playerName: "Mike Trout",
+    players: [{ name: "Mike Trout" }],
     year: 2023,
     brand: "Topps",
     setName: "Chrome",
@@ -15,7 +15,7 @@ const mockCards: Partial<Card>[] = [
   },
   {
     id: "2",
-    playerName: "Shohei Ohtani",
+    players: [{ name: "Shohei Ohtani" }],
     year: 2023,
     brand: "Topps",
     setName: "Chrome",

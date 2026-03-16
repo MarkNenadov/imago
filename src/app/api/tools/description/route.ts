@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { getCardById } from "@/db/cards";
-import type { Card } from "@/db/schema";
+import type { Card, CardPlayer } from "@/db/schema";
 
 function generateDescription(selectedCards: Card[]): { title: string; description: string } {
   const sports = [...new Set(selectedCards.map((c) => c.sport))];
   const sportLabel = sports.length === 1 ? capitalize(sports[0]) : "Sports";
   const title = `${sportLabel} Card Lot - ${selectedCards.length} Cards`;
 
-  const teams = [...new Set(selectedCards.map((c) => c.team).filter(Boolean))];
+  const teams = [...new Set(
+    selectedCards.flatMap((c) => (c.players as CardPlayer[]).map((p) => p.team).filter(Boolean)),
+  )];
   const brands = [...new Set(selectedCards.map((c) => c.brand).filter(Boolean))];
   const years = selectedCards.map((c) => c.year).filter((y): y is number => y != null);
   const minYear = years.length > 0 ? Math.min(...years) : null;
@@ -35,7 +37,8 @@ function generateDescription(selectedCards: Card[]): { title: string; descriptio
 
   lines.push("Cards included:");
   for (const card of selectedCards) {
-    const parts = [card.playerName];
+    const playerNames = (card.players as CardPlayer[]).map((p) => p.name).join(" / ");
+    const parts = [playerNames];
     if (card.year) parts.push(String(card.year));
     if (card.brand) parts.push(card.brand);
     if (card.setName) parts.push(card.setName);

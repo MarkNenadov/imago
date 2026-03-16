@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import type { Card } from "@/db/schema";
+import type { Card, CardPlayer } from "@/db/schema";
 
 interface Stats {
   totalCards: number;
@@ -73,7 +73,7 @@ export default function DashboardPage() {
                   {card.imageFront ? (
                     <img
                       src={card.imageFront}
-                      alt={card.playerName}
+                      alt={(card.players as CardPlayer[])[0]?.name ?? "Card"}
                       className="h-full w-full object-contain"
                     />
                   ) : (
@@ -82,7 +82,9 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
-                <p className="mt-2 truncate text-sm font-medium">{card.playerName}</p>
+                <p className="mt-2 truncate text-sm font-medium">
+                  {(card.players as CardPlayer[]).map((p) => p.name).join(" / ")}
+                </p>
                 <p className="truncate text-xs text-gray-500">
                   {[card.year, card.brand].filter(Boolean).join(" ")}
                 </p>

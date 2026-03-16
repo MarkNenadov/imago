@@ -190,10 +190,9 @@ export function CollectionFilters({ filters, onChange }: CollectionFiltersProps)
           className="mt-1 w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
         >
           <option value="createdAt">Date Added</option>
-          <option value="playerName">Player Name</option>
+          <option value="players">Player Name</option>
           <option value="year">Year</option>
           <option value="brand">Brand</option>
-          <option value="team">Team</option>
           <option value="purchasePrice">Purchase Price</option>
           <option value="location">Location</option>
         </select>

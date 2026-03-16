@@ -44,17 +44,24 @@ const mockGetCardById = vi.mocked(getCardById);
 function makeCard(overrides = {}) {
   return {
     id: "card-1",
-    playerName: "Ken Griffey Jr.",
+    players: [{ name: "Ken Griffey Jr.", team: "Seattle Mariners" }],
     year: 1989,
     brand: "Upper Deck",
     setName: "Base Set",
     cardNumber: "1",
-    team: "Seattle Mariners",
     sport: "baseball",
     variant: null,
     condition: null,
+    purchasePrice: null,
+    purchaseDate: null,
+    purchaseSource: null,
+    location: null,
     imageFront: "/uploads/front.jpg",
     imageBack: null,
+    notes: null,
+    tags: [],
+    createdAt: "2024-01-01",
+    updatedAt: "2024-01-01",
     ...overrides,
   };
 }

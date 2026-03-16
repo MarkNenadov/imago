@@ -1,14 +1,15 @@
 import { sqliteTable, text, real, integer } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
+export type CardPlayer = { name: string; team?: string };
+
 export const cards = sqliteTable("cards", {
   id: text("id").primaryKey(),
-  playerName: text("player_name").notNull(),
+  players: text("players", { mode: "json" }).$type<CardPlayer[]>().notNull().default([]),
   year: integer("year"),
   brand: text("brand"),
   setName: text("set_name"),
   cardNumber: text("card_number"),
-  team: text("team"),
   sport: text("sport").notNull().default("baseball"),
   variant: text("variant"),
   condition: text("condition"),

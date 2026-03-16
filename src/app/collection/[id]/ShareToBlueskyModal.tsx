@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Card } from "@/db/schema";
+import type { Card, CardPlayer } from "@/db/schema";
 import { buildPostText } from "@/lib/bluesky";
 
 type PostState =
@@ -69,7 +69,7 @@ export function ShareToBlueskyModal({ card, rotation, onClose }: ShareToBlueskyM
             {card.imageFront && (
               <img
                 src={card.imageFront}
-                alt={`${card.playerName} front`}
+                alt={`${(card.players as CardPlayer[])[0]?.name ?? "Card"} front`}
                 className="mb-4 h-32 rounded object-contain"
                 style={rotation !== 0 ? { transform: `rotate(${rotation}deg)` } : undefined}
               />

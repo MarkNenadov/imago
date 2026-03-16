@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { createCard, listCards, listCardsPaginated } from "@/db/cards";
 import { imageHashes } from "@/db/schema";
+import type { CardPlayer } from "@/db/schema";
 import { isHallOfFamer, normalizePlayerName } from "@/lib/hall-of-fame";
 
 export async function GET(request: NextRequest) {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     year: params.has("year") ? Number(params.get("year")) : undefined,
     tag: params.get("tag") ?? undefined,
     setName: params.get("setName") ?? undefined,
-    sortBy: (params.get("sortBy") as keyof ReturnType<typeof listCards>[number]) ?? undefined,
+    sortBy: params.get("sortBy") ?? undefined,
     sortOrder: (params.get("sortOrder") as "asc" | "desc") ?? undefined,
     limit: params.has("limit") ? Number(params.get("limit")) : undefined,
     offset: params.has("offset") ? Number(params.get("offset")) : undefined,
@@ -36,14 +37,19 @@ export async function POST(request: NextRequest) {
   const db = getDb();
   const body = await request.json();
 
-  if (!body.playerName?.trim()) {
+  const rawPlayers: CardPlayer[] = Array.isArray(body.players) ? body.players : [];
+  if (rawPlayers.length === 0 || !rawPlayers[0]?.name?.trim()) {
     return NextResponse.json(
-      { error: "playerName is required" },
+      { error: "At least one player with a name is required" },
       { status: 400 },
     );
   }
 
-  const playerName = normalizePlayerName(body.playerName);
+  const players = rawPlayers.map((p) => ({
+    name: normalizePlayerName(p.name.trim()),
+    ...(p.team?.trim() ? { team: p.team.trim() } : {}),
+  }));
+
   if (body.location) body.location = body.location.trim();
 
   const tags: string[] = Array.isArray(body.tags) ? [...body.tags] : [];
@@ -55,11 +61,13 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (isHallOfFamer(playerName) && !tags.includes("HOF")) {
-    tags.push("HOF");
+  for (const player of players) {
+    if (isHallOfFamer(player.name) && !tags.includes("HOF")) {
+      tags.push("HOF");
+    }
   }
 
-  const card = createCard(db, { ...body, playerName, tags });
+  const card = createCard(db, { ...body, players, tags });
 
   const hashes: { hash: string; imagePath: string }[] = Array.isArray(body.imageHashes)
     ? body.imageHashes

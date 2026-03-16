@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import type { Card } from "@/db/schema";
+import type { Card, CardPlayer } from "@/db/schema";
 import { groupDuplicateCards, type DuplicateGroup } from "@/lib/duplicates";
 import type { FlaggedCard, PhotoQualityResponse } from "@/app/api/tools/photo-quality/route";
 
@@ -29,12 +29,16 @@ function CardSelector({
   const filtered = useMemo(() => {
     if (!search.trim()) return cards;
     const q = search.toLowerCase();
-    return cards.filter(
-      (c) =>
-        c.playerName.toLowerCase().includes(q) ||
-        c.team?.toLowerCase().includes(q) ||
-        c.brand?.toLowerCase().includes(q),
-    );
+    return cards.filter((c) => {
+      const players = c.players as CardPlayer[];
+      return (
+        players.some(
+          (p) =>
+            p.name.toLowerCase().includes(q) ||
+            p.team?.toLowerCase().includes(q),
+        ) || c.brand?.toLowerCase().includes(q)
+      );
+    });
   }, [cards, search]);
 
   return (
@@ -59,7 +63,7 @@ function CardSelector({
               className="h-4 w-4 rounded border-gray-300"
             />
             <span className="flex-1 truncate text-sm">
-              {card.playerName}
+              {(card.players as CardPlayer[]).map((p) => p.name).join(" / ")}
               <span className="ml-2 text-gray-400">
                 {[card.year, card.brand].filter(Boolean).join(" ")}
               </span>
@@ -429,7 +433,7 @@ function DuplicateFinder({ cards }: { cards: Card[] }) {
                         {card.imageFront && (
                           <img
                             src={card.imageFront}
-                            alt={card.playerName}
+                            alt={(card.players as CardPlayer[]).map((p) => p.name).join(" / ")}
                             className="mr-3 h-16 w-12 shrink-0 rounded object-cover"
                           />
                         )}
@@ -439,9 +443,12 @@ function DuplicateFinder({ cards }: { cards: Card[] }) {
                               #{card.cardNumber}
                             </span>
                           )}
-                          {card.team && (
-                            <span className="text-gray-600">{card.team}</span>
-                          )}
+                          {(card.players as CardPlayer[])
+                            .flatMap((p) => (p.team ? [p.team] : []))
+                            .filter((t, i, arr) => arr.indexOf(t) === i)
+                            .map((t) => (
+                              <span key={t} className="text-gray-600">{t}</span>
+                            ))}
                           {card.condition && (
                             <span className="text-gray-600">
                               {card.condition}

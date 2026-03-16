@@ -5,6 +5,7 @@ import sharp from "sharp";
 import { AtpAgent, RichText } from "@atproto/api";
 import { getDb } from "@/db";
 import { getCardById } from "@/db/cards";
+import type { CardPlayer } from "@/db/schema";
 
 // Bluesky's maximum blob size in bytes
 const BSKY_MAX_BYTES = 976_560;
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
       facets: rt.facets,
       embed: {
         $type: "app.bsky.embed.images",
-        images: [{ image: blobData.blob, alt: `${card.playerName} card` }],
+        images: [{ image: blobData.blob, alt: `${(card.players as CardPlayer[])[0]?.name ?? "Card"} card` }],
       },
       createdAt: new Date().toISOString(),
     });

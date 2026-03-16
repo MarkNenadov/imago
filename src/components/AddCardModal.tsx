@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CardForm, type CardFormData } from "./CardForm";
 
@@ -11,6 +11,14 @@ interface AddCardModalProps {
 export function AddCardModal({ onClose }: AddCardModalProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && !submitting) onClose();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [submitting, onClose]);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(data: CardFormData) {

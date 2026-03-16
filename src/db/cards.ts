@@ -24,7 +24,7 @@ interface ListFilters {
   year?: number;
   tag?: string;
   setName?: string;
-  sortBy?: keyof Card;
+  sortBy?: string;
   sortOrder?: "asc" | "desc";
   limit?: number;
   offset?: number;
@@ -50,8 +50,7 @@ export function listCardsPaginated(db: DrizzleDb, filters?: ListFilters): Pagina
     const pattern = `%${filters.q}%`;
     conditions.push(
       or(
-        like(cards.playerName, pattern),
-        like(cards.team, pattern),
+        like(cards.players, pattern),
         like(cards.brand, pattern),
         like(cards.setName, pattern),
         like(cards.notes, pattern),
@@ -61,7 +60,11 @@ export function listCardsPaginated(db: DrizzleDb, filters?: ListFilters): Pagina
   if (filters?.sport) conditions.push(eq(cards.sport, filters.sport));
   if (filters?.location) conditions.push(eq(cards.location, filters.location));
   if (filters?.brand) conditions.push(eq(cards.brand, filters.brand));
-  if (filters?.team) conditions.push(eq(cards.team, filters.team));
+  if (filters?.team) {
+    conditions.push(
+      sql`EXISTS (SELECT 1 FROM json_each(${cards.players}) WHERE json_extract(value, '$.team') = ${filters.team})`,
+    );
+  }
   if (filters?.year) conditions.push(eq(cards.year, filters.year));
   if (filters?.tag) conditions.push(like(cards.tags, `%"${filters.tag}"%`));
   if (filters?.setName) conditions.push(eq(cards.setName, filters.setName));
@@ -74,22 +77,29 @@ export function listCardsPaginated(db: DrizzleDb, filters?: ListFilters): Pagina
   }
 
   if (filters?.sortBy) {
-    const sortableColumns: Record<string, AnyColumn> = {
-      playerName: cards.playerName,
-      year: cards.year,
-      brand: cards.brand,
-      team: cards.team,
-      purchasePrice: cards.purchasePrice,
-      createdAt: cards.createdAt,
-      location: cards.location,
-    };
-    const col = sortableColumns[filters.sortBy];
-    if (col) {
+    if (filters.sortBy === "players") {
+      const expr = sql<string>`json_extract(${cards.players}, '$[0].name')`;
       query = query.orderBy(
         filters.sortOrder === "desc"
-          ? sql`${col} DESC NULLS LAST`
-          : sql`${col} ASC NULLS LAST`,
+          ? sql`${expr} DESC NULLS LAST`
+          : sql`${expr} ASC NULLS LAST`,
       );
+    } else {
+      const sortableColumns: Record<string, AnyColumn> = {
+        year: cards.year,
+        brand: cards.brand,
+        purchasePrice: cards.purchasePrice,
+        createdAt: cards.createdAt,
+        location: cards.location,
+      };
+      const col = sortableColumns[filters.sortBy];
+      if (col) {
+        query = query.orderBy(
+          filters.sortOrder === "desc"
+            ? sql`${col} DESC NULLS LAST`
+            : sql`${col} ASC NULLS LAST`,
+        );
+      }
     }
   }
 
@@ -113,8 +123,7 @@ export function searchCards(db: DrizzleDb, query: string): Card[] {
     .from(cards)
     .where(
       or(
-        like(cards.playerName, pattern),
-        like(cards.team, pattern),
+        like(cards.players, pattern),
         like(cards.brand, pattern),
         like(cards.setName, pattern),
         like(cards.notes, pattern),

@@ -1,4 +1,5 @@
 import { cards } from "./schema";
+import type { CardPlayer } from "./schema";
 import type { getDb } from "./index";
 
 type DrizzleDb = ReturnType<typeof getDb>;
@@ -37,18 +38,26 @@ export function getCollectionStats(db: DrizzleDb): CollectionStats {
     (sum, c) => sum + (c.imageFront ? 1 : 0) + (c.imageBack ? 1 : 0),
     0,
   );
-  const distinctPlayers = new Set(allCards.map((c) => c.playerName)).size;
+
+  const playerNameSet = new Set<string>();
+  for (const card of allCards) {
+    for (const player of (card.players as CardPlayer[])) {
+      playerNameSet.add(player.name);
+    }
+  }
+  const distinctPlayers = playerNameSet.size;
+
   const totalInvested = allCards.reduce((sum, c) => sum + (c.purchasePrice ?? 0), 0);
   const topExpensive: ExpensiveCard[] = allCards
     .filter((c) => c.purchasePrice != null)
     .sort((a, b) => (b.purchasePrice ?? 0) - (a.purchasePrice ?? 0))
     .slice(0, 5)
-    .map(({ id, playerName, year, brand, purchasePrice }) => ({
-      id,
-      playerName,
-      year,
-      brand,
-      purchasePrice: purchasePrice!,
+    .map((c) => ({
+      id: c.id,
+      playerName: (c.players as CardPlayer[])[0]?.name ?? "",
+      year: c.year,
+      brand: c.brand,
+      purchasePrice: c.purchasePrice!,
     }));
 
   const bySport: Record<string, number> = {};
@@ -67,9 +76,13 @@ export function getCollectionStats(db: DrizzleDb): CollectionStats {
     if (card.location) {
       byLocation[card.location] = (byLocation[card.location] ?? 0) + 1;
     }
-    if (card.team) {
-      byTeam[card.team] = (byTeam[card.team] ?? 0) + 1;
+
+    for (const player of (card.players as CardPlayer[])) {
+      if (player.team) {
+        byTeam[player.team] = (byTeam[player.team] ?? 0) + 1;
+      }
     }
+
     if (card.year) {
       byYear[String(card.year)] = (byYear[String(card.year)] ?? 0) + 1;
     }
@@ -168,11 +181,13 @@ export function getFilterOptions(db: DrizzleDb): FilterOptions {
     if (card.brand) brandSet.add(card.brand);
     if (card.location) locationSet.add(card.location);
     if (card.setName) setNameSet.add(card.setName);
-    if (card.team) teamSet.add(card.team);
     if (card.tags) {
       for (const tag of card.tags as string[]) {
         tagSet.add(tag);
       }
+    }
+    for (const player of (card.players as CardPlayer[])) {
+      if (player.team) teamSet.add(player.team);
     }
   }
 

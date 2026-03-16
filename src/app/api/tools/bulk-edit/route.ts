@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { listCards, getCardById, updateCard } from "@/db/cards";
-import type { Card } from "@/db/schema";
+import type { Card, CardPlayer } from "@/db/schema";
 
 const EDITABLE_FIELDS = [
   "location",
@@ -38,12 +38,14 @@ function cardIsMissingTag(card: Card, tagName: string): boolean {
 }
 
 function pickCardSummary(card: Card) {
+  const players = (card.players as CardPlayer[]) ?? [];
+  const teams = [...new Set(players.map((p) => p.team).filter(Boolean))];
   return {
     id: card.id,
-    playerName: card.playerName,
+    playerName: players[0]?.name ?? "",
     year: card.year,
     brand: card.brand,
-    team: card.team,
+    team: teams.join(" / ") || null,
   };
 }
 

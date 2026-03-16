@@ -5,12 +5,11 @@ import type { Card } from "@/db/schema";
 function makeCard(overrides: Partial<Card> = {}): Card {
   return {
     id: "1",
-    playerName: "Ken Griffey Jr.",
+    players: [{ name: "Ken Griffey Jr.", team: "Seattle Mariners" }],
     year: 1989,
     brand: "Upper Deck",
     setName: "Base Set",
     cardNumber: "1",
-    team: "Seattle Mariners",
     sport: "baseball",
     variant: null,
     condition: null,
@@ -62,7 +61,7 @@ describe("buildPostText", () => {
   });
 
   it("omits team separator when team is absent", () => {
-    const text = buildPostText(makeCard({ team: null }));
+    const text = buildPostText(makeCard({ players: [{ name: "Ken Griffey Jr." }] }));
     const lines = text.split("\n");
     const sportLine = lines.find((l) => l.startsWith("Baseball"));
     expect(sportLine).toBe("Baseball");
@@ -86,7 +85,7 @@ describe("buildPostText", () => {
   });
 
   it("removes apostrophes and spaces from team hashtag", () => {
-    const text = buildPostText(makeCard({ team: "Oakland A's" }));
+    const text = buildPostText(makeCard({ players: [{ name: "Ken Griffey Jr.", team: "Oakland A's" }] }));
     expect(text.split("\n").at(-1)).toContain("#oaklandas");
   });
 
@@ -96,7 +95,7 @@ describe("buildPostText", () => {
   });
 
   it("omits team hashtag when team is absent", () => {
-    const text = buildPostText(makeCard({ team: null }));
+    const text = buildPostText(makeCard({ players: [{ name: "Ken Griffey Jr." }] }));
     expect(text.split("\n").at(-1)).not.toContain("#seattlemariners");
   });
 
