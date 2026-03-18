@@ -18,7 +18,7 @@ export function CardGallery({ cards }: CardGalleryProps) {
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {cards.map((card) => {
         const players = (card.players as CardPlayer[]) ?? [];
-        const playerNames = players.map((p) => p.name).join(" / ");
+        const playerNames = players.map((p) => p.name || p.team || "").filter(Boolean).join(" / ") || "Team Card";
         return (
           <Link
             key={card.id}

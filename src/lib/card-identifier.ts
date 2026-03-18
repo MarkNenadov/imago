@@ -1,6 +1,7 @@
 import sharp from "sharp";
 
 export interface CardIdentificationResult {
+  requestId?: string;
   playerName: string;
   year?: number;
   brand?: string;
@@ -70,6 +71,7 @@ export async function identifyCard(
   const card = detection.card;
 
   const result = {
+    requestId: data.requestId ?? undefined,
     playerName: card.name ?? "",
     year: card.year ? Number(card.year) : undefined,
     brand: card.manufacturer ?? undefined,

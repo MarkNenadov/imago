@@ -9,6 +9,7 @@ interface FiltersState {
   team: string;
   tag: string;
   setName: string;
+  year: string;
   q: string;
   sortBy: string;
   sortOrder: string;
@@ -27,6 +28,7 @@ export function CollectionFilters({ filters, onChange }: CollectionFiltersProps)
   const [setNames, setSetNames] = useState<string[]>([]);
   const [teams, setTeams] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
+  const [years, setYears] = useState<number[]>([]);
   const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
@@ -38,6 +40,7 @@ export function CollectionFilters({ filters, onChange }: CollectionFiltersProps)
         setSetNames(data.filterOptions?.setNames ?? []);
         setTeams(data.filterOptions?.teams ?? []);
         setTags(data.filterOptions?.tags ?? []);
+        setYears(data.filterOptions?.years ?? []);
       });
   }, []);
 
@@ -118,6 +121,20 @@ export function CollectionFilters({ filters, onChange }: CollectionFiltersProps)
           <option value="">All</option>
           {tags.map((tag) => (
             <option key={tag} value={tag}>{tag}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-500">Year</label>
+        <select
+          value={filters.year}
+          onChange={(e) => update("year", e.target.value)}
+          className="mt-1 w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
+        >
+          <option value="">All</option>
+          {years.map((year) => (
+            <option key={year} value={String(year)}>{year}</option>
           ))}
         </select>
       </div>

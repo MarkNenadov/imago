@@ -150,7 +150,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
     <div>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">
-          {(card.players as CardPlayer[]).map((p) => p.name).join(" / ")}
+          {(card.players as CardPlayer[]).map((p) => p.name || p.team || "").filter(Boolean).join(" / ") || "Team Card"}
         </h1>
         <div className="flex gap-3">
           {card.imageFront && (
@@ -277,14 +277,14 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
                 <p className="text-xs text-gray-500">Sport</p>
                 <p className="text-sm font-medium text-gray-900">{card.sport}</p>
               </div>
-              {(card.players as CardPlayer[]).map((player, i) => (
+              {(card.players as CardPlayer[]).filter((p) => p.name || p.team).map((player, i) => (
                 <div key={i}>
-                  <p className="text-xs text-gray-500">{i === 0 ? "Player" : `Player ${i + 1}`}</p>
-                  <p className="text-sm font-medium text-gray-900">{player.name}</p>
+                  <p className="text-xs text-gray-500">{player.name ? (i === 0 ? "Player" : `Player ${i + 1}`) : "Team"}</p>
+                  {player.name && <p className="text-sm font-medium text-gray-900">{player.name}</p>}
                   {player.team && (
                     <Link
                       href={`/collection?team=${encodeURIComponent(player.team)}`}
-                      className="text-xs text-blue-600 hover:underline"
+                      className={`text-blue-600 hover:underline ${player.name ? "text-xs" : "text-sm font-medium"}`}
                     >
                       {player.team}
                     </Link>

@@ -69,15 +69,18 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
     notes: initialValues?.notes ?? "",
     tags: initialValues?.tags ?? [],
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [tagInput, setTagInput] = useState("");
   const [identifying, setIdentifying] = useState(false);
+  const [identificationRequestId, setIdentificationRequestId] = useState<string | null>(null);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [showMore, setShowMore] = useState(
     !!(initialValues?.setName || initialValues?.cardNumber || initialValues?.variant || initialValues?.location || initialValues?.notes),
   );
 
   async function identifyFromImage(file: File) {
     setIdentifying(true);
+    setIdentificationRequestId(null);
+    setFeedbackSubmitted(false);
     try {
       const body = new FormData();
       body.append("file", file);
@@ -85,6 +88,9 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
       const response = await fetch("/api/identify", { method: "POST", body });
       if (!response.ok) return;
       const result = await response.json();
+      if (result.requestId) {
+        setIdentificationRequestId(result.requestId);
+      }
       setFormData((prev) => {
         const updatedPlayers = [...prev.players];
         if (result.playerName) {
@@ -110,19 +116,28 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
     }
   }
 
-  function validate(): boolean {
-    const newErrors: Record<string, string> = {};
-    if (!formData.players[0]?.name?.trim()) {
-      newErrors.players = "At least one player name is required";
+  async function reportMisidentification() {
+    if (!identificationRequestId) {
+      console.warn("[CardForm] reportMisidentification called but no requestId");
+      return;
     }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    console.log("[CardForm] Submitting misidentification feedback for", identificationRequestId);
+    setFeedbackSubmitted(true);
+    try {
+      const response = await fetch(
+        `/api/feedback/identify/${encodeURIComponent(identificationRequestId)}`,
+        { method: "POST" },
+      );
+      const result = await response.json();
+      console.log("[CardForm] Feedback result:", result);
+    } catch (err) {
+      console.error("[CardForm] Feedback fetch error:", err);
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!validate()) return;
-    const cleanedPlayers = formData.players.filter((p) => p.name.trim());
+    const cleanedPlayers = formData.players.filter((p) => p.name.trim() || (p.team ?? "").trim());
     onSubmit({ ...formData, players: cleanedPlayers });
   }
 
@@ -213,6 +228,21 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
             currentImage={formData.imageBack || undefined}
           />
         </div>
+        {identificationRequestId && (
+          <div className="mt-2 flex items-center gap-2">
+            {feedbackSubmitted ? (
+              <span className="text-xs text-green-600">Thanks for the feedback!</span>
+            ) : (
+              <button
+                type="button"
+                onClick={reportMisidentification}
+                className="min-h-[44px] px-3 text-xs text-red-500 underline hover:text-red-700"
+              >
+                Report Misidentification
+              </button>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Card Details */}
@@ -226,7 +256,7 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
               <div>
                 {index === 0 && (
                   <label htmlFor="player-name-0" className="block text-sm font-medium text-gray-700">
-                    Player Name
+                    Player Name (optional)
                   </label>
                 )}
                 <input
@@ -240,11 +270,12 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
               </div>
               <div>
                 {index === 0 && (
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="player-team-0" className="block text-sm font-medium text-gray-700">
                     Team
                   </label>
                 )}
                 <select
+                  id={`player-team-${index}`}
                   value={player.team ?? ""}
                   onChange={(e) => updatePlayer(index, "team", e.target.value)}
                   className="block h-10 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -269,9 +300,6 @@ export function CardForm({ onSubmit, initialValues, submitting }: CardFormProps)
               )}
             </div>
           ))}
-          {errors.players && (
-            <p className="text-sm text-red-600">{errors.players}</p>
-          )}
           <button
             type="button"
             onClick={addPlayer}

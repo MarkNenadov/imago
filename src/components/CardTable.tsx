@@ -29,7 +29,7 @@ export function CardTable({ cards }: CardTableProps) {
         <tbody className="divide-y divide-gray-200 bg-white">
           {cards.map((card) => {
             const players = (card.players as CardPlayer[]) ?? [];
-            const playerNames = players.map((p) => p.name).join(" / ");
+            const playerNames = players.map((p) => p.name || p.team || "").filter(Boolean).join(" / ") || "Team Card";
             const teams = [...new Set(players.map((p) => p.team).filter(Boolean))].join(" / ");
             return (
               <tr key={card.id} className="hover:bg-gray-50">

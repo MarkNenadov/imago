@@ -44,4 +44,17 @@ describe("CardGallery", () => {
 
     expect(screen.getByText(/no cards found/i)).toBeInTheDocument();
   });
+
+  it("should show team name for team cards with no player name", () => {
+    const teamCard: Partial<Card> = {
+      id: "3",
+      players: [{ name: "", team: "New York Yankees" }],
+      year: 1988,
+      brand: "Topps",
+      sport: "baseball",
+    };
+    render(<CardGallery cards={[teamCard as Card]} />);
+
+    expect(screen.getByText("New York Yankees")).toBeInTheDocument();
+  });
 });

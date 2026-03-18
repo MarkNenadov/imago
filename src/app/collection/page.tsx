@@ -26,6 +26,7 @@ function CollectionContent() {
     team: searchParams.get("team") ?? "",
     tag: searchParams.get("tag") ?? "",
     setName: searchParams.get("setName") ?? "",
+    year: searchParams.get("year") ?? "",
     q: searchParams.get("q") ?? "",
     sortBy: searchParams.get("sortBy") ?? "createdAt",
     sortOrder: searchParams.get("sortOrder") ?? "desc",
@@ -45,6 +46,7 @@ function CollectionContent() {
     if (filters.team) params.set("team", filters.team);
     if (filters.tag) params.set("tag", filters.tag);
     if (filters.setName) params.set("setName", filters.setName);
+    if (filters.year) params.set("year", filters.year);
     if (filters.sortBy) params.set("sortBy", filters.sortBy);
     if (filters.sortOrder) params.set("sortOrder", filters.sortOrder);
 

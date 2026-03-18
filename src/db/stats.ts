@@ -166,6 +166,7 @@ export interface FilterOptions {
   setNames: string[];
   tags: string[];
   teams: string[];
+  years: number[];
 }
 
 export function getFilterOptions(db: DrizzleDb): FilterOptions {
@@ -176,11 +177,13 @@ export function getFilterOptions(db: DrizzleDb): FilterOptions {
   const setNameSet = new Set<string>();
   const tagSet = new Set<string>();
   const teamSet = new Set<string>();
+  const yearSet = new Set<number>();
 
   for (const card of allCards) {
     if (card.brand) brandSet.add(card.brand);
     if (card.location) locationSet.add(card.location);
     if (card.setName) setNameSet.add(card.setName);
+    if (card.year) yearSet.add(card.year);
     if (card.tags) {
       for (const tag of card.tags as string[]) {
         tagSet.add(tag);
@@ -197,5 +200,6 @@ export function getFilterOptions(db: DrizzleDb): FilterOptions {
     setNames: [...setNameSet].sort(),
     tags: [...tagSet].sort(),
     teams: [...teamSet].sort(),
+    years: [...yearSet].sort((a, b) => b - a),
   };
 }

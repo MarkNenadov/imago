@@ -38,15 +38,9 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
 
   const rawPlayers: CardPlayer[] = Array.isArray(body.players) ? body.players : [];
-  if (rawPlayers.length === 0 || !rawPlayers[0]?.name?.trim()) {
-    return NextResponse.json(
-      { error: "At least one player with a name is required" },
-      { status: 400 },
-    );
-  }
 
   const players = rawPlayers.map((p) => ({
-    name: normalizePlayerName(p.name.trim()),
+    name: normalizePlayerName(p.name?.trim() ?? ""),
     ...(p.team?.trim() ? { team: p.team.trim() } : {}),
   }));
 
