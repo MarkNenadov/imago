@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/db";
+import { isCardSightDisabled } from "@/lib/card-identifier";
 import { searchCatalog } from "@/lib/card-catalog";
 import { filterCatalogGaps } from "./filter";
 
 export async function GET(request: NextRequest) {
+  if (isCardSightDisabled()) {
+    return NextResponse.json(
+      { error: "CardSight API is temporarily disabled" },
+      { status: 503 },
+    );
+  }
+
   const params = request.nextUrl.searchParams;
   const player = params.get("player");
 

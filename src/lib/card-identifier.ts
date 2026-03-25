@@ -23,6 +23,10 @@ export function isIdentificationAvailable(): boolean {
   return !!process.env.CARDSIGHT_API_KEY;
 }
 
+export function isCardSightDisabled(): boolean {
+  return process.env.CARDSIGHT_DISABLED === "true";
+}
+
 async function compressImage(imageBuffer: Buffer): Promise<Buffer> {
   return sharp(imageBuffer)
     .rotate()

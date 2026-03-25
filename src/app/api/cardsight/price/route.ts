@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isCardSightDisabled } from "@/lib/card-identifier";
 import { findPriceInCatalog } from "@/lib/card-catalog";
 
 export async function GET(request: NextRequest) {
+  if (isCardSightDisabled()) {
+    return NextResponse.json(
+      { error: "CardSight API is temporarily disabled" },
+      { status: 503 },
+    );
+  }
+
   const apiKey = process.env.CARDSIGHT_API_KEY;
   if (!apiKey) {
     return NextResponse.json(

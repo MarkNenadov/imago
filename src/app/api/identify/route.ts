@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { identifyCard, isIdentificationAvailable } from "@/lib/card-identifier";
+import { identifyCard, isCardSightDisabled, isIdentificationAvailable } from "@/lib/card-identifier";
 
 export async function POST(request: NextRequest) {
+  if (isCardSightDisabled()) {
+    return NextResponse.json(
+      { error: "CardSight API is temporarily disabled" },
+      { status: 503 },
+    );
+  }
+
   if (!isIdentificationAvailable()) {
     return NextResponse.json(
       { error: "Card identification is not configured. Set CARDSIGHT_API_KEY in .env.local" },
