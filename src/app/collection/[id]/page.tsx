@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CardForm, type CardFormData } from "@/components/CardForm";
@@ -47,7 +47,8 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [lightbox, setLightbox] = useState<{ src: string; rotation: number } | null>(null);
+  const [lightbox, setLightbox] = useState<{ src: string; rotation: number; zoom: number; pan: { x: number; y: number } } | null>(null);
+  const lightboxDrag = useRef<{ startX: number; startY: number; panStartX: number; panStartY: number; moved: boolean } | null>(null);
   const [rotateFront, setRotateFront] = useState(0);
   const [rotateBack, setRotateBack] = useState(0);
   const [marketPrice, setMarketPrice] = useState<MarketPriceState>({ status: "idle" });
@@ -150,7 +151,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
     <div>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">
-          {(card.players as CardPlayer[]).map((p) => p.name || p.team || "").filter(Boolean).join(" / ") || "Team Card"}
+          {(card.players as CardPlayer[]).map((p) => p.name || p.team || "").filter(Boolean).join(" / ") || "(No Name)"}
         </h1>
         <div className="flex gap-3">
           {card.imageFront && (
@@ -202,15 +203,59 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
 
       {lightbox && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-          onClick={() => setLightbox(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 cursor-grab active:cursor-grabbing"
+          onMouseDown={(e) => {
+            lightboxDrag.current = {
+              startX: e.clientX,
+              startY: e.clientY,
+              panStartX: lightbox.pan.x,
+              panStartY: lightbox.pan.y,
+              moved: false,
+            };
+          }}
+          onMouseMove={(e) => {
+            const drag = lightboxDrag.current;
+            if (!drag) return;
+            const dx = e.clientX - drag.startX;
+            const dy = e.clientY - drag.startY;
+            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) drag.moved = true;
+            setLightbox((lb) => lb && { ...lb, pan: { x: drag.panStartX + dx, y: drag.panStartY + dy } });
+          }}
+          onMouseUp={() => {
+            const drag = lightboxDrag.current;
+            lightboxDrag.current = null;
+            if (drag && !drag.moved) setLightbox(null);
+          }}
+          onMouseLeave={() => { lightboxDrag.current = null; }}
         >
           <img
             src={lightbox.src}
             alt="Full size"
-            className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl transition-transform duration-200"
-            style={{ transform: `rotate(${lightbox.rotation}deg)` }}
+            className="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl"
+            style={{ transform: `translate(${lightbox.pan.x}px, ${lightbox.pan.y}px) rotate(${lightbox.rotation}deg) scale(${lightbox.zoom})` }}
+            draggable={false}
           />
+          <div
+            className="absolute bottom-6 flex gap-2"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setLightbox((lb) => lb && { ...lb, zoom: Math.max(0.5, lb.zoom - 0.25) })}
+              className="rounded-full bg-white/20 px-4 py-2 text-lg text-white backdrop-blur-sm hover:bg-white/30"
+              title="Zoom out"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              onClick={() => setLightbox((lb) => lb && { ...lb, zoom: Math.min(3, lb.zoom + 0.25) })}
+              className="rounded-full bg-white/20 px-4 py-2 text-lg text-white backdrop-blur-sm hover:bg-white/30"
+              title="Zoom in"
+            >
+              +
+            </button>
+          </div>
         </div>
       )}
 
@@ -232,7 +277,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
                 alt={`${(card.players as CardPlayer[])[0]?.name ?? "Card"} front`}
                 className="w-3/4 cursor-zoom-in rounded-lg shadow-sm transition-transform duration-200"
                 style={{ transform: `rotate(${rotateFront}deg)` }}
-                onClick={() => setLightbox({ src: card.imageFront!, rotation: rotateFront })}
+                onClick={() => setLightbox({ src: card.imageFront!, rotation: rotateFront, zoom: 1, pan: { x: 0, y: 0 } })}
               />
               <RotateControls onRotate={(delta) => setRotateFront((r) => (r + delta + 360) % 360)} />
             </div>
@@ -248,7 +293,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
                 alt={`${(card.players as CardPlayer[])[0]?.name ?? "Card"} back`}
                 className="w-3/4 cursor-zoom-in rounded-lg shadow-sm transition-transform duration-200"
                 style={{ transform: `rotate(${rotateBack}deg)` }}
-                onClick={() => setLightbox({ src: card.imageBack!, rotation: rotateBack })}
+                onClick={() => setLightbox({ src: card.imageBack!, rotation: rotateBack, zoom: 1, pan: { x: 0, y: 0 } })}
               />
               <RotateControls onRotate={(delta) => setRotateBack((r) => (r + delta + 360) % 360)} />
             </div>
