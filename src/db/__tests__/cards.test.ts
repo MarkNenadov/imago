@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
   createCard,
@@ -9,6 +10,7 @@ import {
   renameTag,
   renameLocation,
 } from "@/db/cards";
+import { imageHashes } from "@/db/schema";
 import type { CardPlayer } from "@/db/schema";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 
@@ -296,5 +298,23 @@ describe("deleteCard", () => {
     const db = freshDb();
     const deleted = deleteCard(db, "non-existent");
     expect(deleted).toBe(false);
+  });
+
+  it("should remove image hashes for deleted card's images so they can be re-uploaded", () => {
+    const db = freshDb();
+    const card = createCard(db, {
+      ...sampleCard,
+      imageFront: "/uploads/front.jpg",
+      imageBack: "/uploads/back.jpg",
+    });
+    db.insert(imageHashes).values({ hash: "abc123", imagePath: "/uploads/front.jpg" }).run();
+    db.insert(imageHashes).values({ hash: "def456", imagePath: "/uploads/back.jpg" }).run();
+
+    deleteCard(db, card.id);
+
+    const frontHash = db.select().from(imageHashes).where(eq(imageHashes.hash, "abc123")).get();
+    const backHash = db.select().from(imageHashes).where(eq(imageHashes.hash, "def456")).get();
+    expect(frontHash).toBeUndefined();
+    expect(backHash).toBeUndefined();
   });
 });

@@ -1,6 +1,6 @@
 import { eq, like, or, and, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
-import { cards, type Card, type NewCard } from "./schema";
+import { cards, imageHashes, type Card, type NewCard } from "./schema";
 import type { getDb } from "./index";
 
 type DrizzleDb = ReturnType<typeof getDb>;
@@ -176,6 +176,15 @@ export function updateCard(
 }
 
 export function deleteCard(db: DrizzleDb, id: string): boolean {
+  const card = getCardById(db, id);
+  if (!card) return false;
+
+  for (const imagePath of [card.imageFront, card.imageBack]) {
+    if (imagePath) {
+      db.delete(imageHashes).where(eq(imageHashes.imagePath, imagePath)).run();
+    }
+  }
+
   const result = db.delete(cards).where(eq(cards.id, id)).run();
   return result.changes > 0;
 }
